@@ -1,0 +1,37 @@
+# Dependencies (Thư mục chứa các gói phụ thuộc)
+/node_modules
+/client/node_modules
+/server/node_modules
+
+# Environment (File chứa biến môi trường)
+.env
+/client/.env
+/server/.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build (Thư mục build)
+/client/build
+/server/dist
+
+# Debug logs (File log)
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE (Thư mục cấu hình IDE)
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS (File hệ thống)
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
