@@ -24,7 +24,7 @@ const ProductDetail = () => {
 
   const handleAddToCart = async () => {
     try {
-      const res = await axios.post(`http://localhost:5000/api/cart/add/${product._id}`, {}, { withCredentials: true });
+      await axios.post(`http://localhost:5000/api/cart/add/${product._id}`, {}, { withCredentials: true });
       alert('Đã thêm vào giỏ hàng!');
     } catch (err) {
       console.error('Lỗi khi thêm vào giỏ hàng:', err);
