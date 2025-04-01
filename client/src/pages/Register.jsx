@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { userRegister } from '../store/userSlice';
+import { useNotification } from '../contexts/NotificationContext';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user, loading, error: reduxError } = useSelector((state) => state.user);
+  const { showNotification } = useNotification();
   
   const [formData, setFormData] = useState({
     username: '',
@@ -14,7 +16,6 @@ const RegisterPage = () => {
     confirmPassword: ''
   });
   const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
   const [isFormValid, setIsFormValid] = useState(false);
 
   // Chuyển hướng nếu đã đăng nhập
@@ -41,15 +42,6 @@ const RegisterPage = () => {
       setErrorMessage(reduxError);
     }
   }, [reduxError]);
-
-  // Tự động ẩn thông báo
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setErrorMessage('');
-      setSuccessMessage('');
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [errorMessage, successMessage]);
 
   const validateForm = () => {
     const { username, password, confirmPassword } = formData;
@@ -89,13 +81,16 @@ const RegisterPage = () => {
     }
 
     try {
-      await dispatch(userRegister(formData)).unwrap();
-      setSuccessMessage('Đăng ký thành công! Đang chuyển hướng...');
-      
-      // Delay chuyển hướng để hiện thị thông báo thành công
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
+      const result = await dispatch(userRegister(formData)).unwrap();
+      if (result) {
+        // Hiển thị thông báo đăng ký thành công với đầy đủ thông tin
+        showNotification(`Đăng ký tài khoản thành công! Chào mừng ${formData.username} đến với CurvoTech`, 'success');
+        
+        // Delay chuyển hướng một chút để người dùng có thể đọc thông báo
+        setTimeout(() => {
+          navigate('/login');
+        }, 1500);
+      }
     } catch (error) {
       setErrorMessage(
         error.response?.data?.message || 
@@ -104,33 +99,20 @@ const RegisterPage = () => {
     }
   };
 
-  const handleClose = (type) => {
-    if (type === 'error') setErrorMessage('');
-    if (type === 'success') setSuccessMessage('');
+  const handleClose = () => {
+    setErrorMessage('');
   };
 
   return (
     <div className="bg-gradient-to-r from-green-400 to-blue-500 flex flex-col min-h-screen items-center justify-center px-4">
-      {/* Alerts */}
+      {/* Hiển thị lỗi */}
       {errorMessage && (
         <div className="fixed top-5 right-5 bg-red-500 text-white p-4 rounded shadow-lg flex items-center">
           <i className="fas fa-exclamation-circle mr-2"></i>
           <span>{errorMessage}</span>
           <button 
-            onClick={() => handleClose('error')} 
+            onClick={handleClose} 
             className="ml-4 text-white font-bold hover:text-red-200 transition-colors"
-          >
-            ✕
-          </button>
-        </div>
-      )}
-      {successMessage && (
-        <div className="fixed top-5 right-5 bg-green-500 text-white p-4 rounded shadow-lg flex items-center">
-          <i className="fas fa-check-circle mr-2"></i>
-          <span>{successMessage}</span>
-          <button 
-            onClick={() => handleClose('success')} 
-            className="ml-4 text-white font-bold hover:text-green-200 transition-colors"
           >
             ✕
           </button>

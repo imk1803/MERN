@@ -2,18 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { userLogin } from '../store/userSlice';
+import { useNotification } from '../contexts/NotificationContext';
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user, loading, error: reduxError } = useSelector((state) => state.user);
+  const { showNotification } = useNotification();
   
   const [formData, setFormData] = useState({
     username: '',
     password: ''
   });
   const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
   const [isFormValid, setIsFormValid] = useState(false);
 
   // Redirect if already logged in
@@ -35,18 +36,8 @@ const LoginPage = () => {
     }
   }, [reduxError]);
 
-  // Auto-hide messages after 5 seconds
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setErrorMessage('');
-      setSuccessMessage('');
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [errorMessage, successMessage]);
-
-  const handleClose = (type) => {
-    if (type === 'error') setErrorMessage('');
-    if (type === 'success') setSuccessMessage('');
+  const handleClose = () => {
+    setErrorMessage('');
   };
 
   const handleChange = (e) => {
@@ -69,11 +60,11 @@ const LoginPage = () => {
     try {
       const result = await dispatch(userLogin(formData)).unwrap();
       if (result) {
-        setSuccessMessage('Đăng nhập thành công!');
-        // Delay navigation to show success message
+        showNotification(`Đăng nhập thành công! Chào mừng ${result.user.username || formData.username} trở lại`, 'success');
+        
         setTimeout(() => {
           navigate('/');
-        }, 1000);
+        }, 1500);
       }
     } catch (error) {
       const errorMsg = error.response?.data?.message 
@@ -87,26 +78,14 @@ const LoginPage = () => {
 
   return (
     <div className="bg-gradient-to-r from-blue-500 to-purple-600 flex flex-col min-h-screen items-center justify-center px-4">
-      {/* Alerts */}
+      {/* Hiển thị lỗi */}
       {errorMessage && (
         <div className="fixed top-5 right-5 bg-red-500 text-white p-4 rounded shadow-lg flex items-center">
           <i className="fas fa-exclamation-circle mr-2"></i>
           <span>{errorMessage}</span>
           <button 
-            onClick={() => handleClose('error')} 
+            onClick={handleClose} 
             className="ml-4 text-white font-bold hover:text-red-200 transition-colors"
-          >
-            ✕
-          </button>
-        </div>
-      )}
-      {successMessage && (
-        <div className="fixed top-5 right-5 bg-green-500 text-white p-4 rounded shadow-lg flex items-center">
-          <i className="fas fa-check-circle mr-2"></i>
-          <span>{successMessage}</span>
-          <button 
-            onClick={() => handleClose('success')} 
-            className="ml-4 text-white font-bold hover:text-green-200 transition-colors"
           >
             ✕
           </button>

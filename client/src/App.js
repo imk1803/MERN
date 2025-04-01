@@ -14,10 +14,11 @@ import About from './pages/About';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import SearchResult from './components/SearchResult';
+import { NotificationProvider } from './contexts/NotificationContext';
 
 const AppContent = () => {
   const dispatch = useDispatch();
-  const { user, loading } = useSelector((state) => state.user);
+  const { loading } = useSelector((state) => state.user);
 
   useEffect(() => {
     dispatch(fetchUserProfile());
@@ -29,7 +30,7 @@ const AppContent = () => {
 
   return (
     <Router>
-      <Header user={user} /> {/* Header dùng chung */}
+      <Header /> {/* Header dùng chung */}
 
       <Routes>
         <Route path="/" element={<Home />} />
@@ -50,7 +51,9 @@ const AppContent = () => {
 const App = () => {
   return (
     <Provider store={store}>
-      <AppContent />
+      <NotificationProvider>
+        <AppContent />
+      </NotificationProvider>
     </Provider>
   );
 };

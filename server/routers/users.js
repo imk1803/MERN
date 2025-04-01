@@ -84,7 +84,7 @@ router.post('/register', async (req, res) => {
     );
 
     res.status(201).json({
-      message: 'Đăng ký thành công',
+      message: 'Đăng ký tài khoản thành công! Chào mừng bạn đến với hệ thống.',
       token,
       user: {
         id: newUser._id,
@@ -141,7 +141,7 @@ router.post('/login', async (req, res) => {
     );
 
     res.json({
-      message: 'Đăng nhập thành công',
+      message: 'Đăng nhập thành công! Chào mừng bạn trở lại.',
       token,
       user: {
         id: user._id,

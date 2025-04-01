@@ -1,16 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { userLogout } from '../store/userSlice';
+import { useNotification } from '../contexts/NotificationContext';
 
 const Header = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.user);
+  const { showNotification } = useNotification();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  // Kiểm tra xem có thông báo trong state location không
+  useEffect(() => {
+    console.log("location state:", location.state);
+    if (location.state?.notification) {
+      showNotification(
+        location.state.notification.message,
+        location.state.notification.type || 'success'
+      );
+      
+      // Xóa thông báo khỏi location state để không hiển thị lại khi refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, showNotification]);
 
   // Xử lý tìm kiếm
   const handleSearchSubmit = (e) => {
@@ -33,7 +49,7 @@ const handleLogout = async () => {
     localStorage.removeItem('token');
     
     // Hiển thị thông báo
-    setShowLogoutConfirm(true);
+    showNotification('Đăng xuất thành công!', 'success');
 
     // Đợi 1 giây rồi chuyển hướng
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -43,31 +59,14 @@ const handleLogout = async () => {
 
   } catch (error) {
     console.error('Lỗi đăng xuất:', error);
+    showNotification('Đăng xuất thất bại!', 'error');
   } finally {
     setIsLoggingOut(false);
   }
 };
 
-  // Đóng thông báo sau 3 giây
-  useEffect(() => {
-    if (showLogoutConfirm) {
-      const timer = setTimeout(() => {
-        setShowLogoutConfirm(false);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [showLogoutConfirm]);
-
   return (
-    <header className="bg-gray shadow-md">
-      {/* Thông báo đăng xuất */}
-      {showLogoutConfirm && (
-        <div className="fixed top-5 right-5 bg-green-500 text-white p-4 rounded shadow-lg flex items-center">
-          <i className="fas fa-check-circle mr-2"></i>
-          <span>Đăng xuất thành công!</span>
-        </div>
-      )}
-
+    <header className="bg-gray shadow-md relative">
       <div className="container mx-auto p-4 flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center">
