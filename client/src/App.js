@@ -11,6 +11,7 @@ import Cart from './pages/Cart';
 import ProductList from './pages/Product-list';
 import ProductDetail from './pages/Product-detail';
 import About from './pages/About';
+import Profile from './pages/Profile';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import SearchResult from './components/SearchResult';
@@ -45,6 +46,7 @@ const AppContent = () => {
         <Route path="/products/:id" element={<ProductDetail />} />
         <Route path="/about" element={<About />} />
         <Route path="/search" element={<SearchResult />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
 
       <Footer /> {/* Footer dùng chung */}

@@ -50,7 +50,7 @@ const Profile = () => {
     return () => {
       isMounted = false;
     };
-  }, []); // Only run once when component mounts
+  }, [navigate]); // Added navigate to the dependency array
 
   if (isLoading) {
     return <div className="text-center py-10">Đang tải thông tin...</div>;
