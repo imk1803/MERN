@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link, useSearchParams } from 'react-router-dom';
+import handleAddToCart from '../services/cartService';
+
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
@@ -30,16 +32,6 @@ const ProductList = () => {
 
   const handlePageChange = (newPage) => {
     setSearchParams({ page: newPage });
-  };
-
-  const handleAddToCart = async (productId, productName) => {
-    try {
-      await axios.post(`http://localhost:5000/cart/add/${productId}`);
-      alert(`✅ Đã thêm ${productName} vào giỏ hàng!`);
-    } catch (err) {
-      console.error('❌ Lỗi thêm vào giỏ hàng:', err);
-      alert('❌ Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng!');
-    }
   };
 
   if (products.length === 0) return <p className="text-center mt-10">Không tìm thấy sản phẩm nào.</p>;

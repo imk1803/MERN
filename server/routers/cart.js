@@ -20,7 +20,7 @@ router.post('/cart/add/:id', async (req, res) => {
       if (existing) {
         existing.quantity += 1;
       } else {
-        req.session.cart.push({ productId: product._id, quantity: 1 });
+        req.session.cart.push({ productId: product._id, quantity: 1, productName: product.name, productPrice: product.price, productImage: product.image });
       }
   
       res.status(200).json({ message: 'Đã thêm vào giỏ hàng', cart: req.session.cart });
