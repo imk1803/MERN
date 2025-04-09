@@ -140,6 +140,13 @@ router.post('/login', async (req, res) => {
       { expiresIn: '24h' }
     );
 
+    // Lưu thông tin user vào session
+    req.session.user = {
+      id: user._id,
+      username: user.username,
+      role: user.role
+    };
+
     res.json({
       message: 'Đăng nhập thành công! Chào mừng bạn trở lại.',
       token,
@@ -161,9 +168,19 @@ router.post('/login', async (req, res) => {
 // Đăng xuất
 router.post('/logout', authenticateToken, (req, res) => {
   try {
-    res.json({ 
-      success: true,
-      message: 'Đăng xuất thành công' 
+    // Xóa session
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Lỗi khi xóa session:', err);
+        return res.status(500).json({ 
+          message: 'Lỗi server khi đăng xuất' 
+        });
+      }
+      
+      res.json({ 
+        success: true,
+        message: 'Đăng xuất thành công' 
+      });
     });
   } catch (error) {
     console.error('Lỗi đăng xuất:', error);
@@ -174,11 +191,27 @@ router.post('/logout', authenticateToken, (req, res) => {
 });
 
 // Lấy thông tin user hiện tại
-router.get('/profile', (req, res) => {
-    res.status(503).json({
+router.get('/profile', authenticateToken, (req, res) => {
+  try {
+    // Kiểm tra session
+    if (!req.session.user) {
+      return res.status(401).json({
         success: false,
-        message: 'API profile tạm thời không khả dụng'
+        message: 'Phiên đăng nhập đã hết hạn'
+      });
+    }
+
+    res.json({
+      success: true,
+      user: req.session.user
     });
+  } catch (error) {
+    console.error('Lỗi lấy thông tin profile:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi lấy thông tin profile'
+    });
+  }
 });
 
 module.exports = router;
