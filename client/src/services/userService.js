@@ -35,9 +35,10 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Chỉ xóa token, không chuyển hướng tự động
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      console.log('Token removed due to 401 error');
     }
     return Promise.reject(error);
   }
@@ -103,29 +104,27 @@ export const logout = async () => {
   }
 };
 
-// Cập nhật interceptor response
-axiosInstance.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Xóa token và header khi unauthorized
-      localStorage.removeItem('token');
-      delete axiosInstance.defaults.headers.common['Authorization'];
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
-
 /**
  * Lấy thông tin người dùng
  * @returns {Promise} Thông tin người dùng
  */
 export const getProfile = async () => {
   try {
+    // Kiểm tra token trước khi gọi API
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No token found');
+    }
+    
     const response = await axiosInstance.get('/profile');
     return response.data;
   } catch (error) {
-    handleError(error);
+    // Xử lý lỗi 401 (Unauthorized)
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      // Không chuyển hướng tại đây để tránh vòng lặp
+      console.log('Unauthorized: Token invalid or expired');
+    }
+    return Promise.reject(error);
   }
 };

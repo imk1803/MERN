@@ -21,7 +21,11 @@ const AppContent = () => {
   const { loading } = useSelector((state) => state.user);
 
   useEffect(() => {
-    dispatch(fetchUserProfile());
+    // Chỉ gọi fetchUserProfile khi có token
+    const token = localStorage.getItem('token');
+    if (token) {
+      dispatch(fetchUserProfile());
+    }
   }, [dispatch]);
 
   if (loading) {

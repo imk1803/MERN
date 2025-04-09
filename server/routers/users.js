@@ -7,29 +7,36 @@ const jwt = require('jsonwebtoken');
 // Middleware xác thực JWT
 const authenticateToken = (req, res, next) => {
   try {
+    console.log('authenticateToken middleware triggered');
     const authHeader = req.headers['authorization'];
+    console.log('Auth Header:', authHeader ? 'Present' : 'Missing');
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
+      console.log('Token not found in request');
       return res.status(401).json({ message: 'Không tìm thấy token xác thực' });
     }
 
     if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET environment variable not configured');
       throw new Error('JWT_SECRET không được cấu hình');
     }
 
+    console.log('Verifying token...');
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
       if (err) {
+        console.error('Token verification error:', err.name, err.message);
         if (err.name === 'TokenExpiredError') {
           return res.status(401).json({ message: 'Token đã hết hạn' });
         }
         return res.status(403).json({ message: 'Token không hợp lệ' });
       }
+      console.log('Token verified successfully, user:', user.username);
       req.user = user;
       next();
     });
   } catch (error) {
-    console.error('Lỗi xác thực:', error);
+    console.error('Authentication error:', error);
     res.status(500).json({ message: 'Lỗi xác thực người dùng' });
   }
 };
@@ -193,17 +200,18 @@ router.post('/logout', authenticateToken, (req, res) => {
 // Lấy thông tin user hiện tại
 router.get('/profile', authenticateToken, (req, res) => {
   try {
-    // Kiểm tra session
-    if (!req.session.user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Phiên đăng nhập đã hết hạn'
-      });
-    }
+    console.log('Profile endpoint accessed');
+    // Lấy thông tin user từ token đã được xác thực
+    const { id, username, role } = req.user;
+    console.log('Returning profile for user:', username);
 
     res.json({
       success: true,
-      user: req.session.user
+      user: {
+        id,
+        username,
+        role
+      }
     });
   } catch (error) {
     console.error('Lỗi lấy thông tin profile:', error);
