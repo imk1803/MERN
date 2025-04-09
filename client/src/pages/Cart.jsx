@@ -212,7 +212,7 @@ const Cart = () => {
             <div key={product._id} className="flex flex-col md:flex-row items-center bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow">
               {product.image ? (
                 <img 
-                  src={`http://localhost:5000${product.image}`} 
+                  src={product.image} 
                   alt={product.name} 
                   className="w-24 h-24 object-cover rounded-lg"
                   onError={(e) => {
