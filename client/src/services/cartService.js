@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const handleAddToCart = async (productId, navigate) => {
+const handleAddToCart = async (productId, showNotification) => {
     try {
       await axios.post(
         `http://localhost:5000/api/cart/cart/add/${productId}`,
@@ -8,15 +8,19 @@ const handleAddToCart = async (productId, navigate) => {
         { withCredentials: true }
       );
   
-      alert(`✅ Đã thêm sản phẩm vào giỏ hàng!`);
-  
-      // Kiểm tra navigate có phải function trước khi gọi
-      if (typeof navigate === 'function') {
-        navigate('/cart');
+      // Use the notification callback if provided, otherwise fallback to alert
+      if (typeof showNotification === 'function') {
+        showNotification('Đã thêm sản phẩm vào giỏ hàng!', 'success');
+      } else {
+        alert(`✅ Đã thêm sản phẩm vào giỏ hàng!`);
       }
     } catch (err) {
       console.error('❌ Lỗi thêm vào giỏ hàng:', err);
-      alert('❌ Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng!');
+      if (typeof showNotification === 'function') {
+        showNotification('Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng!', 'error');
+      } else {
+        alert('❌ Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng!');
+      }
     }
   };
   
