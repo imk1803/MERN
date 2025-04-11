@@ -1,14 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { userLogin } from '../store/userSlice';
 import { useNotification } from '../contexts/NotificationContext';
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { user, loading, error: reduxError } = useSelector((state) => state.user);
   const { showNotification } = useNotification();
+  
+  // Sử dụng useMemo để tránh tạo lại đối tượng mỗi khi component render
+  const fromLocation = useMemo(() => 
+    location.state?.from || { pathname: '/' }
+  , [location.state]);
   
   const [formData, setFormData] = useState({
     username: '',
@@ -20,9 +26,9 @@ const LoginPage = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      navigate('/');
+      navigate(fromLocation.pathname);
     }
-  }, [user, navigate]);
+  }, [user, navigate, fromLocation]);
 
   // Validate form whenever input changes
   useEffect(() => {
@@ -63,7 +69,8 @@ const LoginPage = () => {
         showNotification(`Đăng nhập thành công! Chào mừng ${result.user.username || formData.username} trở lại`, 'success');
         
         setTimeout(() => {
-          navigate('/');
+          // Chuyển hướng đến trang trước đó hoặc trang chủ
+          navigate(fromLocation.pathname);
         }, 1500);
       }
     } catch (error) {

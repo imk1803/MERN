@@ -19,6 +19,8 @@ import Footer from './components/Footer';
 import SearchResult from './components/SearchResult';
 import { NotificationProvider } from './contexts/NotificationContext';
 import AdminDashboard from './pages/Admin/AdminDashboard';
+import ProtectedRoute from './components/ProtectedRoute';
+import AccessDenied from './pages/AccessDenied';
 
 // Layout component that conditionally renders Header and Footer
 const AppLayout = ({ children }) => {
@@ -68,7 +70,12 @@ const AppContent = () => {
           <Route path="/payment/:type" element={<PaymentResult />} />
           <Route path="/payment/:type/:id" element={<PaymentResult />} />
           <Route path="/payment/success" element={<PaymentResult />} />
-          <Route path="/admin/*" element={<AdminDashboard />} />
+          <Route path="/admin/*" element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/access-denied" element={<AccessDenied />} />
         </Routes>
       </AppLayout>
     </Router>
