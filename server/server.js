@@ -3,6 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+const cookieParser = require('cookie-parser');
 
 // Debug environment variables
 console.log('⚙️ Environment:', process.env.NODE_ENV);
@@ -21,6 +22,7 @@ const adminRoutes = require('./routers/admin-index');
 const adminUserRoutes = require('./routers/admin-user');
 const adminProductRoutes = require('./routers/admin-product');
 const adminOrderRoutes = require('./routers/admin-order');
+const adminStatsRoutes = require('./routers/admin-stats');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -50,6 +52,7 @@ mongoose.connection.on('disconnected', () => {
 app.use(express.json({ limit: '10mb' })); // Limit JSON body size
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(cookieParser()); // Add cookie parser middleware
 
 // CORS Configuration
 app.use(cors({
@@ -101,6 +104,7 @@ app.use('/admin', adminRoutes);
 app.use(`${API_PREFIX}/admin/users`, adminUserRoutes);
 app.use(`${API_PREFIX}/admin/products`, adminProductRoutes);
 app.use(`${API_PREFIX}/admin/orders`, adminOrderRoutes);
+app.use(`${API_PREFIX}/admin`, adminStatsRoutes);
 
 // Health Check Route
 app.get('/health', (req, res) => {

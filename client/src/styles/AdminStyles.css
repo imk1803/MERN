@@ -10,6 +10,23 @@ a {
     background-color: #f5f7fb;
 }
 
+/* Alert Error */
+.alert-error {
+    background-color: #fee2e2;
+    border-left: 4px solid #ef4444;
+    color: #b91c1c;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.alert-error i {
+    margin-right: 10px;
+    font-size: 18px;
+}
+
 /* Sidebar Styles */
 .admin-sidebar {
     width: 280px;

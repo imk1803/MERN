@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import '../../styles/AdminStyles.css';
+import { useSelector } from 'react-redux';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -12,16 +13,34 @@ const AdminDashboard = () => {
   });
   
   const location = useLocation();
-
+  const { user } = useSelector((state) => state.user);
+  const [error, setError] = useState('');
+  
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/admin/stats', { withCredentials: true });
-        setStats(res.data);
+        // Lấy token từ localStorage
+        const token = localStorage.getItem('token');
+        
+        // Gọi API với token trong header
+        const res = await axios.get('http://localhost:5000/api/admin/stats', { 
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
+          withCredentials: true 
+        });
+        
+        if (res.data && res.data.success) {
+          setStats(res.data);
+        } else {
+          setError('Không thể tải dữ liệu thống kê');
+        }
       } catch (err) {
         console.error('Lỗi khi lấy thống kê:', err);
+        setError(err.response?.data?.message || 'Không thể kết nối đến server');
       }
     };
+    
     fetchStats();
   }, []);
 
@@ -64,6 +83,14 @@ const AdminDashboard = () => {
             <h1>Dashboard</h1>
             <p>Welcome to your admin dashboard</p>
           </div>
+
+          {/* Hiển thị lỗi nếu có */}
+          {error && (
+            <div className="alert-error">
+              <i className="fas fa-exclamation-triangle"></i>
+              <span>{error}</span>
+            </div>
+          )}
 
           <div className="stats-cards">
             <div className="stat-card users">
