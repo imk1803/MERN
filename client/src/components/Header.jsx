@@ -117,7 +117,7 @@ const handleLogout = async () => {
             <>
               {user.role === 'admin' && (
                 <Link
-                  to="/admin/dashboard"
+                  to="/admin"
                   className="text-gray-700 hover:text-blue-500 flex items-center"
                 >
                   <i className="fas fa-cog mr-2"></i> Quản lý Admin

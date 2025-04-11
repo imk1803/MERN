@@ -320,7 +320,7 @@ const Checkout = () => {
                             className="w-10 h-10 object-contain mr-3"
                             onError={(e) => {
                               e.target.onerror = null;
-                              e.target.src = 'https://via.placeholder.com/40?text=' + method.name.charAt(0);
+                              e.target.src = '';
                             }}
                           />
                           <div>
@@ -356,7 +356,7 @@ const Checkout = () => {
                               className="w-12 h-12 object-contain mb-2"
                               onError={(e) => {
                                 e.target.onerror = null;
-                                e.target.src = 'https://via.placeholder.com/48?text=' + bank.name.charAt(0);
+                                e.target.src = '';
                               }}
                             />
                             <p className="text-sm text-center font-medium">{bank.name}</p>
@@ -407,7 +407,7 @@ const Checkout = () => {
                           className="w-full h-full object-cover rounded"
                           onError={(e) => {
                             e.target.onerror = null;
-                            e.target.src = 'https://via.placeholder.com/64?text=No+Image';
+                            e.target.src = '';
                           }}
                         />
                       ) : (
