@@ -15,6 +15,7 @@ const productRoutes = require('./routers/products');
 const searchRoutes = require('./routers/search');
 const cartRoutes = require('./routers/cart');
 const checkoutRoutes = require('./routers/checkout');
+const paymentRoutes = require('./routers/payment');
 const aboutRoutes = require('./routers/about');
 const adminRoutes = require('./routers/admin-index');
 const adminUserRoutes = require('./routers/admin-user');
@@ -92,6 +93,7 @@ app.use(`${API_PREFIX}/products`, productRoutes);
 app.use(`${API_PREFIX}/search`, searchRoutes);
 app.use(`${API_PREFIX}/cart`, cartRoutes);
 app.use(`${API_PREFIX}/checkout`, checkoutRoutes);
+app.use(`${API_PREFIX}/payment`, paymentRoutes);
 app.use(`${API_PREFIX}/about`, aboutRoutes);
 
 // Admin Routes with authentication check

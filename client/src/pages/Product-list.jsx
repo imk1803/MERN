@@ -83,7 +83,7 @@ const ProductList = () => {
             <img src={`http://localhost:5000/${product.image}`} alt={product.name} className="w-full h-40 object-cover" />
             <div className="p-4">
               <h2 className="text-lg font-semibold">{product.name}</h2>
-              <p><strong>Giá từ:</strong> <span className="text-gray-700">{product.price ? product.price.toLocaleString('vi-VN') : 0}đ</span></p>
+              <p><strong>Giá:</strong> <span className="text-gray-700">{product.price ? product.price.toLocaleString('vi-VN') : 0}đ</span></p>
               <Link
                 to={`/products/${product._id}`}
                 className="mt-2 block w-full bg-gray-100 text-gray-500 py-2 rounded-lg flex items-center justify-center"

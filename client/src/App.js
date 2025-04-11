@@ -8,10 +8,12 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Cart from './pages/Cart';
+import Checkout from './pages/Checkout';
 import ProductList from './pages/Product-list';
 import ProductDetail from './pages/Product-detail';
 import About from './pages/About';
 import Profile from './pages/Profile';
+import PaymentResult from './pages/PaymentResult';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import SearchResult from './components/SearchResult';
@@ -42,11 +44,16 @@ const AppContent = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/cart" element={<Cart />} />
+        <Route path="/checkout" element={<Checkout />} />
         <Route path="/products" element={<ProductList />} />
         <Route path="/products/:id" element={<ProductDetail />} />
         <Route path="/about" element={<About />} />
         <Route path="/search" element={<SearchResult />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/payment/result" element={<PaymentResult />} />
+        <Route path="/payment/:type" element={<PaymentResult />} />
+        <Route path="/payment/:type/:id" element={<PaymentResult />} />
+        <Route path="/payment/success" element={<PaymentResult />} />
       </Routes>
 
       <Footer /> {/* Footer dùng chung */}

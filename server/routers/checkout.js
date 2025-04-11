@@ -140,4 +140,61 @@ router.post('/checkout/remove/:index', (req, res) => {
   }
 });
 
+// API endpoint cho React client
+router.post('/', async (req, res) => {
+  try {
+    const { name, email, phone, address, city, note, products, paymentMethod, totalAmount, bankId } = req.body;
+    
+    if (!name || !email || !phone || !address || !products || !paymentMethod) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Vui lòng điền đầy đủ thông tin thanh toán!" 
+      });
+    }
+
+    // Tạo đối tượng đơn hàng
+    const order = new Order({
+      userId: req.user ? req.user._id : null, // Nếu có người dùng đã đăng nhập
+      products: products.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity || 1
+      })),
+      name,
+      email,
+      phone,
+      address,
+      city,
+      note,
+      paymentMethod,
+      totalAmount,
+      status: 'pending'
+    });
+
+    // Thêm thông tin ngân hàng nếu là chuyển khoản
+    if (paymentMethod === 'banking' && bankId) {
+      order.paymentDetails = {
+        method: 'banking',
+        bankId: bankId
+      };
+    }
+
+    // Lưu đơn hàng vào cơ sở dữ liệu
+    const savedOrder = await order.save();
+
+    // Trả về thông tin đơn hàng
+    res.json({
+      success: true,
+      message: "Đơn hàng đã được tạo thành công!",
+      orderId: savedOrder._id
+    });
+  } catch (err) {
+    console.error("Lỗi xử lý thanh toán:", err);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi xử lý thanh toán",
+      error: err.message
+    });
+  }
+});
+
 module.exports = router;
