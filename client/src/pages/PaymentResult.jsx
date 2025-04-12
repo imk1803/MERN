@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { verifyPayment } from '../services/paymentService';
+import { clearCart } from '../services/cartService';
 
 const PaymentResult = () => {
   const [status, setStatus] = useState('loading'); // loading, success, error
@@ -14,24 +15,43 @@ const PaymentResult = () => {
   useEffect(() => {
     const verifyPaymentStatus = async () => {
       try {
+        // Xóa giỏ hàng ngay lập tức khi hiển thị trang kết quả thanh toán
+        await clearCart();
+        console.log('Đã xóa giỏ hàng ở client');
+      
         // Nếu là từ MoMo quay về
         if (searchParams.get('orderId')) {
           const orderId = searchParams.get('orderId');
           const resultCode = searchParams.get('resultCode');
           
+          console.log(`MoMo payment return with orderId: ${orderId}, resultCode: ${resultCode}`);
+          
           if (resultCode === '0') {
-            // Thành công
-            const verifyResult = await verifyPayment(orderId, 'momo');
-            if (verifyResult.success) {
+            try {
+              // Thành công từ Momo, cập nhật trạng thái
+              console.log('Payment successful according to MoMo, verifying with backend');
+              const verifyResult = await verifyPayment(orderId, 'momo');
+              console.log('Verification result:', verifyResult);
+              
+              if (verifyResult.success) {
+                setStatus('success');
+                setMessage('Thanh toán thành công! Đơn hàng của bạn đang được xử lý.');
+                setOrderData(verifyResult);
+              } else {
+                // Hiếm khi xảy ra vì backend đã tự động cập nhật trạng thái
+                setStatus('error');
+                setMessage('Không thể xác minh trạng thái thanh toán. Vui lòng liên hệ hỗ trợ.');
+              }
+            } catch (error) {
+              console.error('Verification error:', error);
+              
+              // Nếu MoMo báo thành công, hiển thị thành công cho người dùng
+              // dù có lỗi khi xác minh (vì tiền đã bị trừ)
               setStatus('success');
-              setMessage('Thanh toán thành công! Đơn hàng của bạn đang được xử lý.');
-              setOrderData(verifyResult);
-            } else {
-              setStatus('error');
-              setMessage('Không thể xác minh trạng thái thanh toán. Vui lòng liên hệ hỗ trợ.');
+              setMessage('Thanh toán đã được MoMo xác nhận. Vui lòng liên hệ hỗ trợ nếu đơn hàng không được cập nhật trong vài phút.');
             }
           } else {
-            // Thất bại
+            // Thất bại từ MoMo
             setStatus('error');
             setMessage(`Thanh toán thất bại: ${searchParams.get('message') || 'Lỗi không xác định'}`);
           }

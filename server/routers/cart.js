@@ -78,6 +78,18 @@ router.post('/cart/remove/:id', (req, res) => {
     }
 });
 
+// ========================== XÓA TOÀN BỘ GIỎ HÀNG ==========================
+router.post('/cart/clear', (req, res) => {
+    try {
+        req.session.cart = [];
+        req.session.save(() => {
+            res.status(200).json({ success: true, message: "Đã xóa toàn bộ giỏ hàng", cart: [] });
+        });
+    } catch (err) {
+        console.error('Lỗi xóa toàn bộ giỏ hàng:', err);
+        res.status(500).json({ success: false, message: "Lỗi xóa toàn bộ giỏ hàng" });
+    }
+});
 
 // ========================== XEM GIỎ HÀNG ==========================
 router.get('/cart', (req, res) => {

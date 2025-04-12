@@ -48,6 +48,17 @@ const initiateOnlineBankingPayment = async (orderData) => {
  */
 const verifyPayment = async (paymentId, type) => {
   try {
+    console.log(`Verifying payment for ${type}, ID: ${paymentId}`);
+    
+    // Xử lý riêng cho từng loại thanh toán
+    if (type === 'momo') {
+      // Đối với momo, thử gọi trực tiếp verify đơn hàng thay vì qua endpoint riêng
+      const response = await paymentAPI.get(`/payment/verify/${paymentId}`);
+      console.log('Verify response:', response.data);
+      return response.data;
+    } 
+    
+    // Các loại thanh toán khác
     const response = await paymentAPI.get(`/payment/${type}/verify/${paymentId}`);
     return response.data;
   } catch (error) {

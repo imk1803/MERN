@@ -35,10 +35,20 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Chỉ xóa token, không chuyển hướng tự động
+    // Nếu có lỗi 401 Unauthorized
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      console.log('Token removed due to 401 error');
+      const errorMessage = error.response?.data?.message || '';
+      
+      // Kiểm tra nếu là lỗi mật khẩu hiện tại không đúng, không xóa token
+      if (errorMessage.includes('hiện tại') || 
+          errorMessage.includes('current password') || 
+          errorMessage.includes('không đúng')) {
+        console.log('Current password error, not removing token');
+      } else {
+        // Các lỗi xác thực khác thì xóa token
+        localStorage.removeItem('token');
+        console.log('Token removed due to 401 error: ', errorMessage);
+      }
     }
     return Promise.reject(error);
   }
@@ -119,12 +129,32 @@ export const getProfile = async () => {
     const response = await axiosInstance.get('/profile');
     return response.data;
   } catch (error) {
-    // Xử lý lỗi 401 (Unauthorized)
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      // Không chuyển hướng tại đây để tránh vòng lặp
-      console.log('Unauthorized: Token invalid or expired');
+    // Lỗi đã được xử lý trong interceptor
+    return Promise.reject(error);
+  }
+};
+
+/**
+ * Đổi mật khẩu
+ * @param {string} currentPassword - Mật khẩu hiện tại
+ * @param {string} newPassword - Mật khẩu mới
+ * @returns {Promise} Kết quả đổi mật khẩu
+ */
+export const changePassword = async (currentPassword, newPassword) => {
+  try {
+    // Kiểm tra token trước khi gọi API
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No token found');
     }
+    
+    const response = await axiosInstance.put('/change-password', {
+      currentPassword,
+      newPassword
+    });
+    return response.data;
+  } catch (error) {
+    // Đã được xử lý trong interceptor, chỉ cần chuyển tiếp lỗi
     return Promise.reject(error);
   }
 };

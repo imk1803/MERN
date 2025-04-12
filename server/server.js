@@ -10,6 +10,9 @@ console.log('⚙️ Environment:', process.env.NODE_ENV);
 console.log('🔑 JWT_SECRET:', process.env.JWT_SECRET ? 'Configured' : 'Missing');
 console.log('🗄️ MongoDB URI:', process.env.MONGODB_URI ? 'Configured' : 'Using default');
 
+// Import models
+const Order = require('./models/Order');
+
 // Import routes
 const userRoutes = require('./routers/users');
 const productRoutes = require('./routers/products');
@@ -135,6 +138,27 @@ app.use((err, req, res, next) => {
         stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
 });
+
+// ========================== SCHEDULED TASKS ==========================
+// Hàm dọn dẹp đơn hàng cũ và thất bại
+const cleanupFailedOrders = async () => {
+  try {
+    console.log('Running scheduled task: Cleaning up failed orders...');
+    const result = await Order.deleteMany({
+      expiryDate: { $lt: new Date() }
+    });
+    console.log(`Cleaned up ${result.deletedCount} expired orders`);
+  } catch (error) {
+    console.error('Error cleaning up failed orders:', error);
+  }
+};
+
+// Chạy tác vụ dọn dẹp mỗi 24 giờ
+const CLEANUP_INTERVAL = 24 * 60 * 60 * 1000; // 24 giờ
+setInterval(cleanupFailedOrders, CLEANUP_INTERVAL);
+
+// Chạy tác vụ dọn dẹp ngay khi server khởi động
+setTimeout(cleanupFailedOrders, 5000);
 
 // ========================== SERVER STARTUP ==========================
 const server = app.listen(PORT, () => {

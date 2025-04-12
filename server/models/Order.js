@@ -14,15 +14,18 @@ const orderSchema = new mongoose.Schema({
     note: { type: String },
     paymentMethod: { type: String, required: true },
     totalAmount: { type: Number, required: true },
-    status: { type: String, default: 'pending', enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'paid'] }, 
+    status: { type: String, default: 'pending', enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'paid', 'failed'] }, 
     paymentDetails: {
         method: { type: String },
         bankId: { type: String },
         transactionId: { type: String },
         amount: { type: Number },
         transferContent: { type: String },
-        paidAt: { type: Date }
+        paidAt: { type: Date },
+        failedAt: { type: Date },
+        failedReason: { type: String }
     },
+    expiryDate: { type: Date },
     createdAt: { type: Date, default: Date.now }
 });
 
