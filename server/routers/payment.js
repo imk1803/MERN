@@ -408,6 +408,57 @@ router.get('/verify/:orderId', async (req, res) => {
   }
 });
 
+// Cập nhật trạng thái đơn hàng (dùng cho thanh toán thất bại)
+router.post('/update-status/:orderId', async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { status, reason } = req.body;
+    
+    console.log(`Updating order ${orderId} status to ${status}, reason: ${reason}`);
+    
+    // Chỉ chấp nhận status là 'failed' từ client
+    if (status !== 'failed') {
+      return res.status(400).json({
+        success: false,
+        message: 'Chỉ chấp nhận cập nhật trạng thái thất bại'
+      });
+    }
+    
+    // Kiểm tra tồn tại đơn hàng
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy đơn hàng'
+      });
+    }
+    
+    // Chỉ cập nhật nếu đơn hàng đang ở trạng thái chờ xử lý
+    if (order.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: `Không thể cập nhật trạng thái. Đơn hàng hiện tại đang ở trạng thái ${order.status}`
+      });
+    }
+    
+    // Cập nhật trạng thái và thiết lập thời gian hết hạn
+    await setFailedPaymentExpiry(orderId, reason);
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Đã cập nhật trạng thái đơn hàng thành thất bại',
+      orderId: orderId
+    });
+    
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
 // Add a cleanup job to delete expired orders
 const setupCleanupJob = () => {
     setInterval(async () => {

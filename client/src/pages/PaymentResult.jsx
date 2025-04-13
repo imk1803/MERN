@@ -3,6 +3,7 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { verifyPayment } from '../services/paymentService';
 import { clearCart } from '../services/cartService';
+import { toast } from 'react-hot-toast';
 
 const PaymentResult = () => {
   const [status, setStatus] = useState('loading'); // loading, success, error
@@ -52,6 +53,22 @@ const PaymentResult = () => {
             }
           } else {
             // Thất bại từ MoMo
+            try {
+              // Gọi API để cập nhật trạng thái đơn hàng thành 'failed'
+              console.log('Payment failed according to MoMo, updating order status');
+              const failedResponse = await axios.post(
+                `http://localhost:5000/api/payment/update-status/${orderId}`,
+                { 
+                  status: 'failed',
+                  reason: searchParams.get('message') || 'Thanh toán MoMo thất bại'
+                }
+              );
+              
+              console.log('Failed payment status update:', failedResponse.data);
+            } catch (error) {
+              console.error('Error updating failed payment status:', error);
+            }
+            
             setStatus('error');
             setMessage(`Thanh toán thất bại: ${searchParams.get('message') || 'Lỗi không xác định'}`);
           }
@@ -99,6 +116,32 @@ const PaymentResult = () => {
         else if (type === 'success') {
           setStatus('success');
           setMessage('Đơn hàng đã được tạo thành công! Cảm ơn bạn đã mua sắm.');
+        }
+        // Trường hợp thất bại chung
+        else if (type === 'failed') {
+          try {
+            // Lấy ID đơn hàng từ đường dẫn URL
+            const orderId = window.location.pathname.split('/').pop();
+            console.log('Failed payment orderId from path:', orderId);
+            
+            if (orderId) {
+              // Gọi API để cập nhật trạng thái đơn hàng thành 'failed'
+              const failedResponse = await axios.post(
+                `http://localhost:5000/api/payment/update-status/${orderId}`,
+                { 
+                  status: 'failed',
+                  reason: 'Thanh toán bị hủy bởi người dùng'
+                }
+              );
+              
+              console.log('Failed payment status update:', failedResponse.data);
+            }
+          } catch (error) {
+            console.error('Error updating failed payment status:', error);
+          }
+          
+          setStatus('error');
+          setMessage('Thanh toán đã bị hủy hoặc không thành công. Vui lòng thử lại sau hoặc chọn phương thức thanh toán khác.');
         }
         // Mặc định nếu không có thông tin
         else {
@@ -279,6 +322,40 @@ const PaymentResult = () => {
             </button>
           )}
         </div>
+        
+        {status === 'pending' && (
+          <div className="flex justify-center mt-4">
+            <button 
+              onClick={async () => {
+                if (window.confirm('Bạn có chắc muốn hủy thanh toán này?')) {
+                  try {
+                    const orderId = window.location.pathname.split('/').pop();
+                    // Gọi API để cập nhật trạng thái đơn hàng thành 'failed'
+                    const response = await axios.post(
+                      `http://localhost:5000/api/payment/update-status/${orderId}`,
+                      { 
+                        status: 'failed',
+                        reason: 'Thanh toán bị hủy bởi người dùng'
+                      }
+                    );
+                    
+                    console.log('Cancel payment response:', response.data);
+                    if (response.data.success) {
+                      // Chuyển đến trang thất bại thanh toán
+                      navigate('/payment/failed/' + orderId);
+                    }
+                  } catch (error) {
+                    console.error('Error cancelling payment:', error);
+                    toast.error('Có lỗi xảy ra khi hủy thanh toán');
+                  }
+                }
+              }}
+              className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+            >
+              Hủy thanh toán
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
