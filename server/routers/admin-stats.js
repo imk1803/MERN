@@ -79,18 +79,23 @@ router.get('/stats', authenticateToken, isAdmin, async (req, res) => {
     // Lấy số lượng đơn hàng
     const totalOrders = await Order.countDocuments();
     
-    // Lấy 5 đơn hàng gần nhất
+    // Lấy 5 đơn hàng gần nhất để hiển thị trên dashboard
     const recentOrders = await Order.find()
       .populate('user', 'username')
       .sort({ createdAt: -1 })
       .limit(5);
+    
+    // Lấy tất cả đơn hàng để phục vụ thống kê và biểu đồ
+    const allOrders = await Order.find()
+      .sort({ createdAt: -1 });
     
     res.json({
       success: true,
       totalUsers,
       totalProducts,
       totalOrders,
-      recentOrders
+      recentOrders,
+      allOrders
     });
   } catch (error) {
     console.error('Error fetching admin stats:', error);

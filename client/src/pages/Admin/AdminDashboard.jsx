@@ -40,8 +40,22 @@ const SalesChart = ({ chartRef }) => (
   </div>
 );
 
+const StatusChart = ({ chartRef }) => (
+  <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
+    <div className="flex justify-between items-center mb-6">
+      <h2 className="text-lg font-semibold text-gray-800">TRẠNG THÁI ĐƠN HÀNG</h2>
+      <button className="text-gray-400 hover:text-gray-600 focus:outline-none">
+        <i className="fas fa-ellipsis-v"></i>
+      </button>
+    </div>
+    <div className="h-80">
+      <canvas ref={chartRef} id="orderStatusChart"></canvas>
+    </div>
+  </div>
+);
+
 const RecentOrders = ({ orders = [] }) => {
-  console.log('Orders received:', orders);
+  console.log('Recent orders received:', orders);
 
   return (
     <div className="bg-white rounded-xl shadow-sm">
@@ -70,8 +84,6 @@ const RecentOrders = ({ orders = [] }) => {
           <tbody className="divide-y divide-gray-100">
             {Array.isArray(orders) && orders.length > 0 ? (
               orders.map((order) => {
-                console.log('Processing order:', order);
-                
                 // Lấy sản phẩm đầu tiên từ mảng products
                 const firstProduct = order?.products?.[0] || {};
                 
@@ -180,13 +192,16 @@ const AdminDashboard = () => {
     totalUsers: 0,
     totalProducts: 0,
     totalOrders: 0,
-    recentOrders: []
+    recentOrders: [],
+    allOrders: []
   });
   
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const chartRef = useRef(null);
+  const statusChartRef = useRef(null);
   const chartInstance = useRef(null);
+  const statusChartInstance = useRef(null);
 
   // Tạo axios instance
   const axiosInstance = useMemo(() => axios.create({
@@ -204,22 +219,27 @@ const AdminDashboard = () => {
         setLoading(true);
         console.log('Đang lấy thống kê...');
 
-        const response = await axiosInstance.get('/api/admin/stats');
-        console.log('Response từ API:', response.data);
+        // Lấy thông tin thống kê từ API
+        const statsResponse = await axiosInstance.get('/api/admin/stats');
+        console.log('Response thống kê từ API:', statsResponse.data);
 
-        if (!response.data.success) {
-          throw new Error(response.data.message || 'Không thể lấy thống kê');
+        if (!statsResponse.data.success) {
+          throw new Error(statsResponse.data.message || 'Không thể lấy thống kê');
         }
 
-        // Lấy chi tiết đơn hàng và tính toán % tăng giảm
-        const ordersWithDetails = await Promise.all(
-          response.data.recentOrders.map(async (order) => {
-            console.log('Đơn hàng gốc:', order);
-
+        // Lấy chi tiết đơn hàng gần đây với thông tin sản phẩm
+        const recentOrdersWithDetails = await Promise.all(
+          statsResponse.data.recentOrders.map(async (order) => {
             const productsWithDetails = await Promise.all(
               (order.products || []).map(async (product) => {
                 try {
-                  const productRes = await axiosInstance.get(`/api/products/${product.productId}`);
+                  // Đảm bảo productId là một string hợp lệ
+                  const productId = product.productId?._id || product.productId;
+                  if (!productId) {
+                    throw new Error('Invalid product ID');
+                  }
+                  
+                  const productRes = await axiosInstance.get(`/api/products/${productId}`);
                   return {
                     ...product,
                     ...productRes.data.product
@@ -243,7 +263,7 @@ const AdminDashboard = () => {
           })
         );
 
-        // Tính % tăng giảm cho users, products, orders
+        // Tính % tăng giảm cho users, products, orders dựa trên tất cả đơn hàng
         const currentDate = new Date();
         const lastMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
         const thisMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
@@ -261,11 +281,11 @@ const AdminDashboard = () => {
         };
 
         // Đếm số lượng đơn hàng tháng này và tháng trước
-        const thisMonthOrders = ordersWithDetails.filter(order => 
+        const thisMonthOrders = statsResponse.data.allOrders.filter(order => 
           new Date(order.createdAt) >= thisMonth
         ).length;
 
-        const lastMonthOrders = ordersWithDetails.filter(order => 
+        const lastMonthOrders = statsResponse.data.allOrders.filter(order => 
           new Date(order.createdAt) >= lastMonth && new Date(order.createdAt) < thisMonth
         ).length;
 
@@ -274,13 +294,13 @@ const AdminDashboard = () => {
 
         // Tính % thay đổi users
         const thisMonthUsers = new Set(
-          ordersWithDetails
+          statsResponse.data.allOrders
             .filter(order => new Date(order.createdAt) >= thisMonth)
             .map(order => order.userId)
         ).size;
 
         const lastMonthUsers = new Set(
-          ordersWithDetails
+          statsResponse.data.allOrders
             .filter(order => new Date(order.createdAt) >= lastMonth && new Date(order.createdAt) < thisMonth)
             .map(order => order.userId)
         ).size;
@@ -289,13 +309,13 @@ const AdminDashboard = () => {
 
         // Tính % thay đổi products
         const thisMonthProducts = new Set(
-          ordersWithDetails
+          statsResponse.data.allOrders
             .filter(order => new Date(order.createdAt) >= thisMonth)
             .flatMap(order => order.products.map(p => p.productId))
         ).size;
 
         const lastMonthProducts = new Set(
-          ordersWithDetails
+          statsResponse.data.allOrders
             .filter(order => new Date(order.createdAt) >= lastMonth && new Date(order.createdAt) < thisMonth)
             .flatMap(order => order.products.map(p => p.productId))
         ).size;
@@ -309,10 +329,11 @@ const AdminDashboard = () => {
         });
 
         setStats({
-          totalUsers: response.data.totalUsers || 0,
-          totalProducts: response.data.totalProducts || 0,
-          totalOrders: response.data.totalOrders || 0,
-          recentOrders: ordersWithDetails,
+          totalUsers: statsResponse.data.totalUsers || 0,
+          totalProducts: statsResponse.data.totalProducts || 0,
+          totalOrders: statsResponse.data.totalOrders || 0,
+          recentOrders: recentOrdersWithDetails,
+          allOrders: statsResponse.data.allOrders,
           changes: {
             users: userChange,
             products: productChange,
@@ -336,24 +357,25 @@ const AdminDashboard = () => {
       chartInstance.current.destroy();
     }
 
-    if (chartRef.current) {
-      // Tạo mảng chứa doanh số theo tháng
+    if (chartRef.current && stats.allOrders && stats.allOrders.length > 0) {
+      // Tạo mảng chứa doanh số theo tháng và trạng thái
       const monthlySales = new Array(12).fill(0);
       const currentYear = new Date().getFullYear();
 
-      // Tính tổng doanh số theo tháng
-      stats.recentOrders.forEach(order => {
+      // Tính tổng doanh số theo tháng và trạng thái (chỉ tính các đơn đã giao/thanh toán)
+      stats.allOrders.forEach(order => {
         if (order.createdAt && order.totalAmount) {
           const orderDate = new Date(order.createdAt);
-          // Chỉ tính các đơn hàng trong năm hiện tại
-          if (orderDate.getFullYear() === currentYear) {
+          // Chỉ tính các đơn hàng trong năm hiện tại và có trạng thái đã giao hoặc đã thanh toán
+          if (orderDate.getFullYear() === currentYear && 
+              (order.status === 'delivered' || order.status === 'paid')) {
             const month = orderDate.getMonth(); // 0-11
             monthlySales[month] += order.totalAmount;
           }
         }
       });
 
-      console.log('Doanh số theo tháng:', monthlySales);
+      console.log('Doanh số theo tháng (đơn hàng đã hoàn thành):', monthlySales);
 
       const ctx = chartRef.current.getContext('2d');
       chartInstance.current = new Chart(ctx, {
@@ -377,7 +399,7 @@ const AdminDashboard = () => {
             },
             title: {
               display: true,
-              text: '(VNĐ)',
+              text: 'Doanh số từ đơn hàng đã hoàn thành (VNĐ)',
               align: 'start',
               font: {
                 size: 16,
@@ -439,7 +461,101 @@ const AdminDashboard = () => {
         chartInstance.current.destroy();
       }
     };
-  }, [stats.recentOrders]);
+  }, [stats.allOrders]);
+
+  // Tạo biểu đồ tròn cho trạng thái đơn hàng
+  useEffect(() => {
+    if (statusChartInstance.current) {
+      statusChartInstance.current.destroy();
+    }
+
+    if (statusChartRef.current && stats.allOrders && stats.allOrders.length > 0) {
+      // Đếm số lượng đơn hàng theo trạng thái
+      const statusCounts = {};
+      const statusColors = {
+        'delivered': '#10B981', // green
+        'shipped': '#3B82F6',   // blue
+        'processing': '#6366F1', // indigo
+        'pending': '#F59E0B',   // yellow
+        'paid': '#059669',      // emerald
+        'failed': '#F97316',    // orange
+        'cancelled': '#EF4444', // red
+        'unknown': '#9CA3AF'    // gray
+      };
+
+      // Tên hiển thị tiếng Việt cho từng trạng thái
+      const statusLabels = {
+        'delivered': 'Đã giao hàng',
+        'shipped': 'Đang giao hàng',
+        'processing': 'Đang xử lý',
+        'pending': 'Chờ xác nhận',
+        'paid': 'Đã thanh toán',
+        'failed': 'Thanh toán thất bại',
+        'cancelled': 'Đã hủy',
+        'unknown': 'Không xác định'
+      };
+
+      stats.allOrders.forEach(order => {
+        const status = order.status || 'unknown';
+        statusCounts[status] = (statusCounts[status] || 0) + 1;
+      });
+
+      console.log('Phân bố trạng thái đơn hàng:', statusCounts);
+
+      // Chuẩn bị dữ liệu cho biểu đồ
+      const statusLabelsArray = Object.keys(statusCounts).map(key => statusLabels[key] || key);
+      const statusData = Object.values(statusCounts);
+      const backgroundColors = Object.keys(statusCounts).map(key => statusColors[key] || '#9CA3AF');
+
+      const ctx = statusChartRef.current.getContext('2d');
+      statusChartInstance.current = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: statusLabelsArray,
+          datasets: [{
+            data: statusData,
+            backgroundColor: backgroundColors,
+            borderWidth: 1,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: {
+                padding: 20,
+                boxWidth: 12,
+                font: {
+                  size: 12
+                }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.raw;
+                  const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                  const percentage = Math.round((value / total) * 100);
+                  return `${label}: ${value} (${percentage}%)`;
+                }
+              }
+            }
+          },
+          cutout: '60%'
+        }
+      });
+    }
+
+    return () => {
+      if (statusChartInstance.current) {
+        statusChartInstance.current.destroy();
+      }
+    };
+  }, [stats.allOrders]);
 
   const statsCards = [
     {
@@ -470,23 +586,27 @@ const AdminDashboard = () => {
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             {error}
-                </div>
+          </div>
         )}
 
         {loading ? (
           <div className="flex flex-col items-center justify-center min-h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
             <p className="mt-4">Đang tải thông tin...</p>
-              </div>
+          </div>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
               {statsCards.map((card, index) => (
                 <StatsCard key={index} {...card} />
               ))}
-          </div>
+            </div>
 
-            <SalesChart chartRef={chartRef} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              <SalesChart chartRef={chartRef} />
+              <StatusChart chartRef={statusChartRef} />
+            </div>
+            
             <RecentOrders orders={stats.recentOrders} />
           </>
         )}
