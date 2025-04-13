@@ -73,8 +73,7 @@ router.get('/', authenticateToken, isAdmin, async (req, res) => {
 // GET: Get a single category by ID
 router.get('/:id', authenticateToken, isAdmin, async (req, res) => {
   try {
-    const category = await Category.findById(req.params.id)
-      .populate('parent', 'name slug');
+    const category = await Category.findById(req.params.id);
     
     if (!category) {
       return res.status(404).json({

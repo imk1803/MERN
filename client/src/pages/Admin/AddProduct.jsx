@@ -232,7 +232,7 @@ const AddProduct = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-                        Danh mục
+                        Danh mục sản phẩm
                       </label>
                       <select
                         id="category"
@@ -241,7 +241,7 @@ const AddProduct = () => {
                         onChange={handleInputChange}
                         className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       >
-                        <option value="">-- Chọn danh mục --</option>
+                        <option value="">-- Chọn danh mục sản phẩm --</option>
                         {categories.map((category) => (
                           <option key={category._id} value={category._id}>
                             {category.name}
@@ -265,24 +265,7 @@ const AddProduct = () => {
                             placeholder="Nhập tên danh mục mới"
                           />
                         </div>
-                      ) : (
-                        <div>
-                          <label htmlFor="rating" className="block text-sm font-medium text-gray-700 mb-1">
-                            Đánh giá (0-5)
-                          </label>
-                          <input
-                            type="number"
-                            id="rating"
-                            name="rating"
-                            value={productData.rating}
-                            onChange={handleInputChange}
-                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            min="0"
-                            max="5"
-                            step="0.1"
-                          />
-                        </div>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                   

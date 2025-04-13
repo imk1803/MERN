@@ -263,16 +263,16 @@ const EditProduct = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-                          Danh mục
+                          Danh mục sản phẩm
                         </label>
                         <select
                           id="category"
                           name="category"
-                          value={productData.category}
+                          value={productData.category || ""}
                           onChange={handleInputChange}
                           className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         >
-                          <option value="">-- Chọn danh mục --</option>
+                          <option value="">-- Chọn danh mục sản phẩm --</option>
                           {categories.map((category) => (
                             <option key={category._id} value={category._id}>
                               {category.name}

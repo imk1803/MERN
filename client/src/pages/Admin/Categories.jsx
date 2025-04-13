@@ -31,7 +31,7 @@ const CategoryList = ({ categories, onEdit, onDelete }) => {
             <div className="flex-1">
               <h3 className="font-medium text-lg">{category.name}</h3>
               {!category.isActive && (
-                <span className="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded">Inactive</span>
+                <span className="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded">Không hoạt động</span>
               )}
             </div>
           </div>
@@ -46,18 +46,56 @@ const CategoryList = ({ categories, onEdit, onDelete }) => {
               className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-md transition-colors duration-200"
             >
               <i className="bi bi-pencil-fill mr-1"></i>
-              Edit
+              Sửa
             </button>
             <button
               onClick={() => onDelete(category._id, category.name)}
               className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md transition-colors duration-200"
             >
               <i className="bi bi-trash-fill mr-1"></i>
-              Delete
+              Xóa
             </button>
           </div>
         </div>
       ))}
+    </div>
+  );
+};
+
+// Delete Confirmation Modal component
+const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, categoryName }) => {
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 animate-fadeIn">
+        <div className="text-center mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 text-red-500 mb-4">
+            <i className="bi bi-exclamation-triangle-fill text-2xl"></i>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Xác nhận xóa</h3>
+          <p className="text-gray-600">
+            Bạn có chắc chắn muốn xóa danh mục "<span className="font-medium">{categoryName}</span>"?
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            Hành động này không thể hoàn tác.
+          </p>
+        </div>
+        <div className="flex justify-end space-x-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md transition"
+          >
+            Hủy bỏ
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition"
+          >
+            Xóa danh mục
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
@@ -68,6 +106,13 @@ const Categories = () => {
   const [error, setError] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
+  
+  // State for delete confirmation modal
+  const [deleteModal, setDeleteModal] = useState({
+    isOpen: false,
+    categoryId: null,
+    categoryName: ''
+  });
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -79,11 +124,11 @@ const Categories = () => {
       if (response.success) {
         setCategories(response.categories || []);
       } else {
-        setError(response.message || 'Error loading categories');
+        setError(response.message || 'Lỗi khi tải danh mục');
       }
     } catch (err) {
-      console.error('Error fetching categories:', err);
-      setError(err.response?.data?.message || 'Unable to connect to server');
+      console.error('Lỗi khi lấy danh mục:', err);
+      setError(err.response?.data?.message || 'Không thể kết nối đến máy chủ');
     } finally {
       setLoading(false);
     }
@@ -98,24 +143,46 @@ const Categories = () => {
   };
 
   const handleDeleteCategory = async (categoryId, categoryName) => {
-    if (window.confirm(`Are you sure you want to delete the category "${categoryName}"?`)) {
-      try {
-        setLoading(true);
-        const response = await deleteCategory(categoryId);
+    // Open confirmation modal instead of using window.confirm
+    setDeleteModal({
+      isOpen: true,
+      categoryId,
+      categoryName
+    });
+  };
+  
+  const confirmDelete = async () => {
+    try {
+      setLoading(true);
+      const response = await deleteCategory(deleteModal.categoryId);
+      
+      if (response.success) {
+        // Close modal
+        setDeleteModal({ isOpen: false, categoryId: null, categoryName: '' });
         
-        if (response.success) {
-          // Refresh categories list after successful deletion
-          fetchCategories();
-          alert('Category deleted successfully!');
-        } else {
-          setError(response.message || 'Error deleting category');
-          setLoading(false);
-        }
-      } catch (err) {
-        console.error('Error deleting category:', err);
-        setError(err.response?.data?.message || 'Unable to connect to server');
+        // Show success notification
+        const successMessage = document.createElement('div');
+        successMessage.className = 'fixed top-4 right-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-md z-50';
+        successMessage.innerHTML = '<div class="flex items-center"><i class="bi bi-check-circle-fill mr-2"></i>Đã xóa danh mục thành công!</div>';
+        document.body.appendChild(successMessage);
+        
+        // Remove notification after 3 seconds
+        setTimeout(() => {
+          document.body.removeChild(successMessage);
+        }, 3000);
+        
+        // Refresh categories list
+        fetchCategories();
+      } else {
+        setError(response.message || 'Lỗi khi xóa danh mục');
+        setDeleteModal({ isOpen: false, categoryId: null, categoryName: '' });
         setLoading(false);
       }
+    } catch (err) {
+      console.error('Lỗi khi xóa danh mục:', err);
+      setError(err.response?.data?.message || 'Không thể kết nối đến máy chủ');
+      setDeleteModal({ isOpen: false, categoryId: null, categoryName: '' });
+      setLoading(false);
     }
   };
 
@@ -126,13 +193,13 @@ const Categories = () => {
       <div className="flex-1 p-8 overflow-auto">
         <div className="mb-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-800">Category Management</h1>
+            <h1 className="text-2xl font-bold text-gray-800">Quản lý Danh mục</h1>
             <Link 
               to="/admin/categories/add" 
               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md flex items-center"
             >
               <i className="bi bi-plus-lg mr-2"></i>
-              Add Category
+              Thêm Danh mục
             </Link>
           </div>
         </div>
@@ -149,37 +216,39 @@ const Categories = () => {
         {loading ? (
           <div className="flex flex-col items-center justify-center min-h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-            <p className="mt-4">Loading categories...</p>
+            <p className="mt-4">Đang tải danh mục...</p>
           </div>
         ) : categories.length > 0 ? (
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="mb-4 bg-gray-50 p-3 rounded-md">
-              <h2 className="text-lg font-medium text-gray-700 mb-2">Category Management</h2>
-              <p className="text-sm text-gray-500">
-                Manage your product categories to organize your products effectively.
-              </p>
-            </div>
+          
             
             <CategoryList 
               categories={categories} 
               onEdit={handleEditCategory} 
               onDelete={handleDeleteCategory}
             />
-          </div>
+          
         ) : (
           <div className="bg-white rounded-xl shadow-sm p-6 text-center">
             <i className="bi bi-tags text-4xl text-gray-400 mb-3 block"></i>
-            <p className="text-gray-500">No categories found. Add your first category!</p>
+            <p className="text-gray-500">Không tìm thấy danh mục nào. Hãy thêm danh mục đầu tiên của bạn!</p>
             <Link
               to="/admin/categories/add"
               className="inline-block mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
             >
               <i className="bi bi-plus-lg mr-2"></i>
-              Add Category
+              Thêm Danh mục
             </Link>
           </div>
         )}
       </div>
+      
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal 
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, categoryId: null, categoryName: '' })}
+        onConfirm={confirmDelete}
+        categoryName={deleteModal.categoryName}
+      />
     </div>
   );
 };

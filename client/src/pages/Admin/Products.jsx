@@ -5,6 +5,44 @@ import { getCategories } from '../../services/adminCategoryService';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import AdminSidebar from '../../components/AdminSidebar';
 
+// Delete Confirmation Modal component
+const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, productName }) => {
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 animate-fadeIn">
+        <div className="text-center mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 text-red-500 mb-4">
+            <i className="bi bi-exclamation-triangle-fill text-2xl"></i>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Xác nhận xóa</h3>
+          <p className="text-gray-600">
+            Bạn có chắc chắn muốn xóa sản phẩm "<span className="font-medium">{productName}</span>"?
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            Hành động này không thể hoàn tác.
+          </p>
+        </div>
+        <div className="flex justify-end space-x-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md transition"
+          >
+            Hủy bỏ
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition"
+          >
+            Xóa sản phẩm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Products = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,6 +60,13 @@ const Products = () => {
   });
   const [categories, setCategories] = useState([]);
   const location = useLocation();
+  
+  // State for delete confirmation modal
+  const [deleteModal, setDeleteModal] = useState({
+    isOpen: false,
+    productId: null,
+    productName: ''
+  });
 
   // Fetch products with current filters and pagination
   const fetchProductsData = useCallback(async () => {
@@ -108,25 +153,47 @@ const Products = () => {
     fetchProductsData();
   }, [fetchProductsData]);
 
-  const handleDeleteProduct = async (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này không?')) {
-      try {
-        setLoading(true);
-        const response = await deleteProduct(id);
+  const handleDeleteProduct = async (id, name) => {
+    // Open confirmation modal instead of using window.confirm
+    setDeleteModal({
+      isOpen: true,
+      productId: id,
+      productName: name
+    });
+  };
+  
+  const confirmDelete = async () => {
+    try {
+      setLoading(true);
+      const response = await deleteProduct(deleteModal.productId);
+      
+      if (response.success) {
+        // Close modal
+        setDeleteModal({ isOpen: false, productId: null, productName: '' });
         
-        if (response.success) {
-          // Nếu xóa thành công, cập nhật danh sách sản phẩm
-          setProducts(products.filter(product => product._id !== id));
-          alert('Xóa sản phẩm thành công!');
-        } else {
-          setError(response.message || 'Có lỗi xảy ra khi xóa sản phẩm');
-        }
-      } catch (err) {
-        console.error('Lỗi khi xóa sản phẩm:', err);
-        setError(err.response?.data?.message || 'Không thể kết nối đến server');
-      } finally {
-        setLoading(false);
+        // Show success notification
+        const successMessage = document.createElement('div');
+        successMessage.className = 'fixed top-4 right-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-md z-50';
+        successMessage.innerHTML = '<div class="flex items-center"><i class="bi bi-check-circle-fill mr-2"></i>Đã xóa sản phẩm thành công!</div>';
+        document.body.appendChild(successMessage);
+        
+        // Remove notification after 3 seconds
+        setTimeout(() => {
+          document.body.removeChild(successMessage);
+        }, 3000);
+        
+        // Update the products list
+        setProducts(products.filter(product => product._id !== deleteModal.productId));
+      } else {
+        setError(response.message || 'Có lỗi xảy ra khi xóa sản phẩm');
+        setDeleteModal({ isOpen: false, productId: null, productName: '' });
       }
+    } catch (err) {
+      console.error('Lỗi khi xóa sản phẩm:', err);
+      setError(err.response?.data?.message || 'Không thể kết nối đến server');
+      setDeleteModal({ isOpen: false, productId: null, productName: '' });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -203,32 +270,42 @@ const Products = () => {
                 </button>
               </form>
             </div>
-            <div className="flex space-x-2">
-              <select
-                className="w-1/2 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                name="category"
-                value={filters.category}
-                onChange={handleFilterChange}
-              >
-                <option value="">Tất cả danh mục</option>
-                {categories.map((category) => (
-                  <option key={category._id} value={category._id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-              <select
-                className="w-1/2 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                name="sort"
-                value={filters.sort}
-                onChange={handleFilterChange}
-              >
-                <option value="newest">Mới nhất</option>
-                <option value="price_asc">Giá tăng dần</option>
-                <option value="price_desc">Giá giảm dần</option>
-                <option value="name_asc">Tên A-Z</option>
-                <option value="name_desc">Tên Z-A</option>
-              </select>
+            <div className="flex space-x-4">
+              <div className="w-1/2 relative">
+                <select
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none pr-8"
+                  name="category"
+                  value={filters.category}
+                  onChange={handleFilterChange}
+                >
+                  <option value="">Tất cả danh mục sản phẩm</option>
+                  {categories.map((category) => (
+                    <option key={category._id || category} value={category._id || category}>
+                      {category.name || category}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                  <i className="bi bi-chevron-down text-gray-400"></i>
+                </div>
+              </div>
+              <div className="w-1/2 relative">
+                <select
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none pr-8"
+                  name="sort"
+                  value={filters.sort}
+                  onChange={handleFilterChange}
+                >
+                  <option value="newest">Mới nhất</option>
+                  <option value="price_asc">Giá tăng dần</option>
+                  <option value="price_desc">Giá giảm dần</option>
+                  <option value="name_asc">Tên A-Z</option>
+                  <option value="name_desc">Tên Z-A</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                  <i className="bi bi-chevron-down text-gray-400"></i>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -329,7 +406,7 @@ const Products = () => {
                             Sửa
                           </Link>
                           <button
-                            onClick={() => handleDeleteProduct(product._id)}
+                            onClick={() => handleDeleteProduct(product._id, product.name)}
                             className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md transition-colors duration-200"
                           >
                             <i className="bi bi-trash-fill mr-1"></i>
@@ -402,6 +479,14 @@ const Products = () => {
           </div>
         )}
       </div>
+      
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, productId: null, productName: '' })}
+        onConfirm={confirmDelete}
+        productName={deleteModal.productName}
+      />
     </div>
   );
 };

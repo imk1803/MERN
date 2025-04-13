@@ -1,50 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { getCategories, getCategoryById, createCategory, updateCategory } from '../../services/adminCategoryService';
-
-// Sidebar component
-const Sidebar = ({ location }) => {
-  const menuItems = [
-    { path: '/admin/dashboard', icon: 'fas fa-tachometer-alt', label: 'Dashboard' },
-    { path: '/admin/products', icon: 'fas fa-box', label: 'Products' },
-    { path: '/admin/categories', icon: 'fas fa-tags', label: 'Categories' },
-    { path: '/admin/orders', icon: 'fas fa-shopping-cart', label: 'Orders' },
-    { path: '/admin/users', icon: 'fas fa-users', label: 'Users' },
-    { path: '/', icon: 'fas fa-home', label: 'Home' }
-  ];
-
-  return (
-    <div className="w-64 bg-white shadow-lg">
-      <div className="p-6">
-        <img
-          src="https://i.pinimg.com/736x/43/5d/09/435d096b52b0be4816d214c05ab0c22e.jpg"
-          alt="Logo"
-          className="h-10 w-10 rounded-full mb-2"
-        />
-        <h1 className="text-2xl font-bold text-indigo-600">CurvoTech Admin</h1>
-      </div>
-      <nav className="mt-4">
-        <ul>
-          {menuItems.map((item) => (
-            <li
-              key={item.path}
-              className={`px-6 py-3 ${
-                location.pathname === item.path
-                  ? 'bg-indigo-50 text-indigo-600 border-r-4 border-indigo-600'
-                  : 'text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <Link to={item.path} className="flex items-center">
-                <i className={`${item.icon} mr-3`}></i>
-                <span className="font-medium">{item.label}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
-    </div>
-  );
-};
+import AdminSidebar from '../../components/AdminSidebar';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
 // Helper to create a flattened option list with indentation for hierarchy
 const createCategoryOptions = (categories, categoryId = null) => {
@@ -137,12 +95,12 @@ const CategoryForm = () => {
               );
             }
           } else {
-            setError(categoryResponse.message || 'Failed to load category');
+            setError(categoryResponse.message || 'Không thể tải thông tin danh mục');
           }
         }
       } catch (err) {
-        console.error('Error loading data:', err);
-        setError(err.response?.data?.message || 'Unable to connect to server');
+        console.error('Lỗi khi tải dữ liệu:', err);
+        setError(err.response?.data?.message || 'Không thể kết nối đến máy chủ');
       } finally {
         setLoading(false);
       }
@@ -185,7 +143,7 @@ const CategoryForm = () => {
     try {
       // Validate form
       if (!formData.name.trim()) {
-        setError('Category name is required');
+        setError('Tên danh mục là bắt buộc');
         setSaveLoading(false);
         return;
       }
@@ -231,11 +189,11 @@ const CategoryForm = () => {
           navigate('/admin/categories');
         }, 2000);
       } else {
-        setError(response.message || 'Error saving category');
+        setError(response.message || 'Lỗi khi lưu danh mục');
       }
     } catch (err) {
-      console.error('Error saving category:', err);
-      setError(err.response?.data?.message || 'Unable to connect to server');
+      console.error('Lỗi khi lưu danh mục:', err);
+      setError(err.response?.data?.message || 'Không thể kết nối đến máy chủ');
     } finally {
       setSaveLoading(false);
     }
@@ -246,19 +204,19 @@ const CategoryForm = () => {
   
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar location={location} />
+      <AdminSidebar />
       
       <div className="flex-1 p-8 overflow-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-gray-800">
-            {isEditMode ? 'Edit Category' : 'Add New Category'}
+            {isEditMode ? 'Chỉnh Sửa Danh Mục' : 'Thêm Danh Mục Mới'}
           </h1>
           <Link 
             to="/admin/categories" 
             className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md flex items-center"
           >
-            <i className="fas fa-arrow-left mr-2"></i>
-            Back to Categories
+            <i className="bi bi-arrow-left mr-2"></i>
+            Quay Lại
           </Link>
         </div>
         
@@ -266,11 +224,11 @@ const CategoryForm = () => {
         {success && (
           <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
             <div className="flex items-center">
-              <i className="fas fa-check-circle mr-2"></i>
+              <i className="bi bi-check-circle mr-2"></i>
               <span>
                 {isEditMode 
-                  ? 'Category updated successfully! Redirecting...' 
-                  : 'Category created successfully! Redirecting...'}
+                  ? 'Cập nhật danh mục thành công! Đang chuyển hướng...' 
+                  : 'Tạo danh mục thành công! Đang chuyển hướng...'}
               </span>
             </div>
           </div>
@@ -280,7 +238,7 @@ const CategoryForm = () => {
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             <div className="flex items-center">
-              <i className="fas fa-exclamation-circle mr-2"></i>
+              <i className="bi bi-exclamation-triangle mr-2"></i>
               <span>{error}</span>
             </div>
           </div>
@@ -290,7 +248,7 @@ const CategoryForm = () => {
         {loading ? (
           <div className="flex flex-col items-center justify-center min-h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-            <p className="mt-4">Loading data...</p>
+            <p className="mt-4">Đang tải dữ liệu...</p>
           </div>
         ) : (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -300,7 +258,7 @@ const CategoryForm = () => {
                   <div className="md:col-span-2 space-y-6">
                     <div>
                       <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                        Category Name <span className="text-red-500">*</span>
+                        Tên Danh Mục <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -315,7 +273,7 @@ const CategoryForm = () => {
                     
                     <div>
                       <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                        Description
+                        Mô Tả
                       </label>
                       <textarea
                         id="description"
@@ -337,7 +295,7 @@ const CategoryForm = () => {
                         className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                       />
                       <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
-                        Active Category
+                        Danh Mục Hoạt Động
                       </label>
                     </div>
                   </div>
@@ -345,7 +303,7 @@ const CategoryForm = () => {
                   <div>
                     <div className="mb-4">
                       <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-1">
-                        Category Image
+                        Hình Ảnh Danh Mục
                       </label>
                       <input
                         type="file"
@@ -356,13 +314,13 @@ const CategoryForm = () => {
                         className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
                       <p className="mt-1 text-sm text-gray-500">
-                        Max size: 5MB. Formats: JPG, PNG, WEBP
+                        Kích thước tối đa: 5MB. Định dạng: JPG, PNG, WEBP
                       </p>
                     </div>
                     
                     {previewUrl && (
                       <div className="mt-4">
-                        <p className="text-sm font-medium text-gray-700 mb-2">Preview:</p>
+                        <p className="text-sm font-medium text-gray-700 mb-2">Xem trước:</p>
                         <img
                           src={previewUrl}
                           alt="Preview"
@@ -389,12 +347,12 @@ const CategoryForm = () => {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Processing...
+                        Đang xử lý...
                       </>
                     ) : (
                       <>
-                        <i className={`fas ${isEditMode ? 'fa-save' : 'fa-plus-circle'} mr-2`}></i>
-                        {isEditMode ? 'Update Category' : 'Add Category'}
+                        <i className={`bi ${isEditMode ? 'bi-save' : 'bi-plus-circle'} mr-2`}></i>
+                        {isEditMode ? 'Cập Nhật Danh Mục' : 'Thêm Danh Mục'}
                       </>
                     )}
                   </button>
