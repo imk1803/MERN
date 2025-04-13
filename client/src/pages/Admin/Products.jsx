@@ -257,7 +257,6 @@ const Products = () => {
                     <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Tên sản phẩm</th>
                     <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Giá</th>
                     <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Danh mục</th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Kho</th>
                     <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
                     <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Mô tả</th>
                     <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
@@ -300,9 +299,6 @@ const Products = () => {
                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
                           {product.categoryName || 'N/A'}
                         </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {product.stock || 0}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {product.rating ? (

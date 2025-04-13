@@ -170,7 +170,7 @@ router.get('/:id', authenticateToken, isAdmin, async (req, res) => {
 // POST: Tạo sản phẩm mới
 router.post('/', authenticateToken, isAdmin, upload.single('image'), async (req, res) => {
   try {
-    const { name, price, description, category, stock, rating } = req.body;
+    const { name, price, description, category, rating } = req.body;
     
     // Validate dữ liệu đầu vào
     if (!name || !price) {
@@ -186,7 +186,6 @@ router.post('/', authenticateToken, isAdmin, upload.single('image'), async (req,
       price: parseFloat(price),
       description,
       category,
-      stock: parseInt(stock) || 0,
       rating: parseFloat(rating) || 0
     });
     
@@ -216,7 +215,7 @@ router.post('/', authenticateToken, isAdmin, upload.single('image'), async (req,
 // PUT: Cập nhật sản phẩm
 router.put('/:id', authenticateToken, isAdmin, upload.single('image'), async (req, res) => {
   try {
-    const { name, price, description, category, stock, rating } = req.body;
+    const { name, price, description, category, rating } = req.body;
     const productId = req.params.id;
     
     // Tìm sản phẩm cần cập nhật
@@ -235,7 +234,6 @@ router.put('/:id', authenticateToken, isAdmin, upload.single('image'), async (re
       price: parseFloat(price) || product.price,
       description: description || product.description,
       category: category || product.category,
-      stock: parseInt(stock) || product.stock,
       rating: parseFloat(rating) || product.rating
     };
     

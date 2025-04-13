@@ -19,7 +19,6 @@ const AddProduct = () => {
     price: '',
     description: '',
     category: '',
-    stock: '',
     rating: ''
   });
   
@@ -119,7 +118,6 @@ const AddProduct = () => {
           price: '',
           description: '',
           category: '',
-          stock: '',
           rating: ''
         });
         setFile(null);
@@ -214,17 +212,19 @@ const AddProduct = () => {
                       />
                     </div>
                     <div>
-                      <label htmlFor="stock" className="block text-sm font-medium text-gray-700 mb-1">
-                        Số lượng kho
+                      <label htmlFor="rating" className="block text-sm font-medium text-gray-700 mb-1">
+                        Đánh giá (0-5)
                       </label>
                       <input
                         type="number"
-                        id="stock"
-                        name="stock"
-                        value={productData.stock}
+                        id="rating"
+                        name="rating"
+                        value={productData.rating}
                         onChange={handleInputChange}
                         className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         min="0"
+                        max="5"
+                        step="0.1"
                       />
                     </div>
                   </div>

@@ -21,7 +21,6 @@ const EditProduct = () => {
     price: '',
     description: '',
     category: '',
-    stock: '',
     rating: ''
   });
   
@@ -46,7 +45,6 @@ const EditProduct = () => {
             price: product.price || '',
             description: product.description || '',
             category: product.category?._id || product.category || '',
-            stock: product.stock || '',
             rating: product.rating || ''
           });
           
@@ -257,20 +255,6 @@ const EditProduct = () => {
                           onChange={handleInputChange}
                           className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                           required
-                          min="0"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="stock" className="block text-sm font-medium text-gray-700 mb-1">
-                          Số lượng kho
-                        </label>
-                        <input
-                          type="number"
-                          id="stock"
-                          name="stock"
-                          value={productData.stock}
-                          onChange={handleInputChange}
-                          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                           min="0"
                         />
                       </div>

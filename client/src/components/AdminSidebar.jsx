@@ -5,12 +5,12 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 const AdminSidebar = () => {
   const location = useLocation();
   const menuItems = [
-    { path: '/admin/dashboard', icon: 'fas fa-tachometer-alt', label: 'Dashboard' },
-    { path: '/admin/products', icon: 'fas fa-box', label: 'Products' },
-    { path: '/admin/categories', icon: 'fas fa-tags', label: 'Categories' },
-    { path: '/admin/orders', icon: 'fas fa-shopping-cart', label: 'Orders' },
-    { path: '/admin/users', icon: 'fas fa-users', label: 'Users' },
-    { path: '/', icon: 'fas fa-home', label: 'Home' }
+    { path: '/admin/dashboard', icon: 'bi bi-speedometer2', label: 'Dashboard' },
+    { path: '/admin/products', icon: 'bi bi-box', label: 'Products' },
+    { path: '/admin/categories', icon: 'bi bi-tags', label: 'Categories' },
+    { path: '/admin/orders', icon: 'bi bi-cart', label: 'Orders' },
+    { path: '/admin/users', icon: 'bi bi-people', label: 'Users' },
+    { path: '/', icon: 'bi bi-house', label: 'Home' }
   ];
 
   // Check if current path starts with the menu item path
@@ -18,6 +18,12 @@ const AdminSidebar = () => {
     if (path === '/admin/dashboard') {
       return location.pathname === '/admin' || location.pathname === '/admin/dashboard';
     }
+    
+    // Special case for home path to prevent it from matching all routes
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+    
     return location.pathname.startsWith(path);
   };
 
