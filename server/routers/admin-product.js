@@ -58,7 +58,7 @@ router.get('/', authenticateToken, isAdmin, async (req, res) => {
     if (category) {
       // Ensure category is a valid ObjectId
       if (mongoose.Types.ObjectId.isValid(category)) {
-        query.category = mongoose.Types.ObjectId(category);
+        query.category = new mongoose.Types.ObjectId(category);
       } else {
         // Fallback to categoryName for backward compatibility
         query.categoryName = category;
@@ -121,6 +121,25 @@ router.get('/', authenticateToken, isAdmin, async (req, res) => {
   }
 });
 
+// GET: Lấy danh sách các danh mục
+router.get('/categories', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const categories = await Product.distinct('category');
+    
+    res.json({
+      success: true,
+      categories
+    });
+  } catch (err) {
+    console.error('Lỗi khi lấy danh sách danh mục:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi lấy danh sách danh mục',
+      error: err.message
+    });
+  }
+});
+
 // GET: Lấy chi tiết một sản phẩm
 router.get('/:id', authenticateToken, isAdmin, async (req, res) => {
   try {
@@ -143,25 +162,6 @@ router.get('/:id', authenticateToken, isAdmin, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Lỗi server khi lấy chi tiết sản phẩm',
-      error: err.message
-    });
-  }
-});
-
-// GET: Lấy danh sách các danh mục
-router.get('/categories', authenticateToken, isAdmin, async (req, res) => {
-  try {
-    const categories = await Product.distinct('category');
-    
-    res.json({
-      success: true,
-      categories
-    });
-  } catch (err) {
-    console.error('Lỗi khi lấy danh sách danh mục:', err);
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi server khi lấy danh sách danh mục',
       error: err.message
     });
   }
