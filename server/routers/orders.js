@@ -21,7 +21,7 @@ router.get('/', authenticateToken, async (req, res) => {
       .skip(skip)
       .limit(limit)
       .populate({
-        path: 'products.product',
+        path: 'products.productId',
         select: 'name price images'
       });
 
@@ -66,7 +66,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
       _id: id,
       user: req.user._id
     }).populate({
-      path: 'products.product',
+      path: 'products.productId',
       select: 'name price images'
     });
 
@@ -148,28 +148,50 @@ router.post('/', authenticateToken, async (req, res) => {
   try {
     const {
       products,
-      customerDetails,
+      name, 
+      email, 
+      phone, 
+      address, 
+      city, 
+      note,
       paymentMethod,
-      totalAmount
+      totalAmount,
+      bankId
     } = req.body;
 
     // Validate required fields
-    if (!products || !products.length || !customerDetails || !paymentMethod || !totalAmount) {
+    if (!products || !products.length || !name || !email || !phone || !address || !paymentMethod || !totalAmount) {
       return res.status(400).json({
         success: false,
         message: 'Vui lòng cung cấp đầy đủ thông tin đơn hàng'
       });
     }
 
-    // Create new order
+    // Create new order with user ID from authenticated user
     const newOrder = new Order({
       user: req.user._id,
-      products,
-      customerDetails,
+      products: products.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity
+      })),
+      name,
+      email,
+      phone,
+      address,
+      city: city || '',
+      note: note || '',
       paymentMethod,
       totalAmount,
       status: 'pending'
     });
+
+    // Add payment details if banking method
+    if (paymentMethod === 'banking' && bankId) {
+      newOrder.paymentDetails = {
+        method: 'banking',
+        bankId: bankId
+      };
+    }
 
     await newOrder.save();
 

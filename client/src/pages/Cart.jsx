@@ -3,6 +3,8 @@ import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
 import { toast } from 'react-hot-toast';
+import { useSelector } from 'react-redux';
+import Spinner from '../components/Spinner';
 
 const Cart = () => {
   console.log('Cart component rendering');
@@ -13,6 +15,7 @@ const Cart = () => {
   const [processing, setProcessing] = useState(false);
   const { showNotification } = useNotification();
   const navigate = useNavigate();
+  const { user } = useSelector(state => state.user);
 
   // Sử dụng useMemo để tạo axiosInstance ổn định, không bị tạo mới mỗi lần render
   const axiosInstance = useMemo(() => axios.create({
@@ -153,6 +156,15 @@ const Cart = () => {
   const remove = (id, name) => handleAction('remove', id, name);
 
   const handleCheckout = () => {
+    if (!user) {
+      toast.error('Vui lòng đăng nhập để tiếp tục thanh toán', { 
+        duration: 4000,
+        position: 'top-center' 
+      });
+      navigate('/login', { state: { from: { pathname: '/checkout' } } });
+      return;
+    }
+    
     if (cart.length === 0) {
       showNotification('Giỏ hàng trống, không thể thanh toán', 'error');
     } else {

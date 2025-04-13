@@ -1,52 +1,27 @@
 import React from 'react';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
-  const getPageNumbers = () => {
-    const pageNumbers = [];
-    const maxPagesToShow = 5;
+  const renderPageNumbers = () => {
+    const totalPageCount = Math.max(1, totalPages); // Ensure totalPages is at least 1
     
-    if (totalPages <= maxPagesToShow) {
-      // If there are fewer pages than the max to show, display all pages
-      for (let i = 1; i <= totalPages; i++) {
-        pageNumbers.push(i);
-      }
-    } else {
-      // Always show first page
-      pageNumbers.push(1);
-      
-      // Calculate start and end of pages to show
-      let startPage = Math.max(2, currentPage - 1);
-      let endPage = Math.min(totalPages - 1, currentPage + 1);
-      
-      // Adjust if at the start or end
-      if (currentPage <= 2) {
-        endPage = Math.min(totalPages - 1, maxPagesToShow - 1);
-      } else if (currentPage >= totalPages - 1) {
-        startPage = Math.max(2, totalPages - maxPagesToShow + 2);
-      }
-      
-      // Add ellipsis if needed
-      if (startPage > 2) {
-        pageNumbers.push('...');
-      }
-      
-      // Add middle pages
-      for (let i = startPage; i <= endPage; i++) {
-        pageNumbers.push(i);
-      }
-      
-      // Add ellipsis if needed
-      if (endPage < totalPages - 1) {
-        pageNumbers.push('...');
-      }
-      
-      // Always show last page
-      if (totalPages > 1) {
-        pageNumbers.push(totalPages);
+    let startPage = Math.max(1, currentPage - 1);
+    let endPage = Math.min(totalPageCount, currentPage + 1);
+    
+    // Adjust start and end page if we're at the boundaries
+    if (endPage - startPage + 1 < 3 && totalPageCount > 2) {
+      if (currentPage === 1) {
+        endPage = Math.min(3, totalPageCount);
+      } else if (currentPage === totalPageCount) {
+        startPage = Math.max(1, totalPageCount - 2);
       }
     }
     
-    return pageNumbers;
+    const pages = [];
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    
+    return pages;
   };
 
   const handlePageClick = (page) => {
@@ -71,7 +46,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
         &laquo;
       </button>
       
-      {getPageNumbers().map((page, index) => (
+      {renderPageNumbers().map((page, index) => (
         <button
           key={index}
           onClick={() => handlePageClick(page)}

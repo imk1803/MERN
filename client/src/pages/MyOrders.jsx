@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { getUserOrders } from '../services/orderService';
 import { formatPrice, formatDate } from '../utils/formatters';
 import Spinner from '../components/Spinner';
 import Pagination from '../components/Pagination';
+import { useSelector } from 'react-redux';
 
 const MyOrders = () => {
+  const location = useLocation();
+  const { user, loading: userLoading } = useSelector((state) => state.user);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -23,7 +26,7 @@ const MyOrders = () => {
       console.log('Orders result:', result);
       
       if (result.success) {
-        setOrders(result.orders);
+        setOrders(result.orders.map(processOrderData));
         setTotalPages(Math.ceil(result.pagination.total / limit));
       } else {
         setError(result.message || 'Không thể tải thông tin đơn hàng');
@@ -39,8 +42,24 @@ const MyOrders = () => {
   }, [page, limit]);
 
   useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+    if (user) {
+      fetchOrders();
+    }
+  }, [fetchOrders, user]);
+
+  // Hàm để xử lý dữ liệu từ Backend - bảo đảm tương thích với cấu trúc dữ liệu mới
+  const processOrderData = (order) => {
+    // Đảm bảo trả về đúng format dữ liệu cho frontend hiển thị
+    return {
+      ...order,
+      // Đảm bảo products có định dạng đúng cho hiển thị
+      products: Array.isArray(order.products) ? order.products.map(item => ({
+        ...item,
+        product: item.productId || item.product, // Hỗ trợ cả hai định dạng cũ và mới
+        quantity: item.quantity || 1,
+      })) : []
+    };
+  };
 
   // Hàm thử lại khi gặp lỗi
   const handleRetry = () => {
@@ -84,6 +103,16 @@ const MyOrders = () => {
   const handlePageChange = (newPage) => {
     setPage(newPage);
   };
+
+  // Kiểm tra người dùng đã đăng nhập chưa
+  if (userLoading) {
+    return <Spinner />;
+  }
+
+  // Nếu chưa đăng nhập, chuyển hướng về trang đăng nhập
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
 
   if (loading) {
     return <Spinner />;

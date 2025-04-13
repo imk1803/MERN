@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { initiateMomoPayment, initiateOnlineBankingPayment, getPaymentMethods } from '../services/paymentService';
+import { useSelector } from 'react-redux';
 
 const axiosInstance = axios.create({
   baseURL: 'http://localhost:5000',
@@ -11,6 +12,9 @@ const axiosInstance = axios.create({
 
 const Checkout = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user, loading: userLoading } = useSelector((state) => state.user);
+  
   const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(true);
   const [paymentMethods, setPaymentMethods] = useState([]);
@@ -18,8 +22,8 @@ const Checkout = () => {
   const [selectedBank, setSelectedBank] = useState('');
   const [showBanks, setShowBanks] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
+    name: user?.name || '',
+    email: user?.email || '',
     phone: '',
     address: '',
     city: '',
@@ -29,6 +33,9 @@ const Checkout = () => {
 
   // Lấy giỏ hàng và phương thức thanh toán
   useEffect(() => {
+    // Chỉ fetch data nếu người dùng đã đăng nhập
+    if (!user) return;
+
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -70,7 +77,18 @@ const Checkout = () => {
     };
 
     fetchData();
-  }, [navigate]);
+  }, [navigate, user]);
+
+  // Cập nhật formData khi user thay đổi
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: user.name || prev.name,
+        email: user.email || prev.email
+      }));
+    }
+  }, [user]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -137,8 +155,12 @@ const Checkout = () => {
       
       console.log('Sending order data:', orderData);
       
-      // Gửi đơn hàng lên server
-      const orderRes = await axiosInstance.post('/api/checkout', orderData);
+      // Gửi đơn hàng lên server - Sử dụng API orders để đảm bảo gắn userID
+      const orderRes = await axiosInstance.post('/api/orders', orderData, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       
       console.log('Order response:', orderRes.data);
       
@@ -148,7 +170,7 @@ const Checkout = () => {
         return;
       }
       
-      const orderId = orderRes.data.orderId;
+      const orderId = orderRes.data.order._id;
       
       // Xử lý thanh toán theo phương thức đã chọn
       if (selectedPaymentMethod === 'momo') {
@@ -198,13 +220,30 @@ const Checkout = () => {
         navigate('/payment/success');
       }
       
-    } catch (error) {
-      console.error('Lỗi khi xử lý thanh toán:', error);
-      toast.error('Có lỗi xảy ra khi xử lý thanh toán');
-    } finally {
+      // Xóa giỏ hàng sau khi đặt hàng thành công
+      try {
+        await axiosInstance.delete('/api/cart/clear');
+      } catch (err) {
+        console.error('Error clearing cart:', err);
+        // Không ngăn người dùng tiếp tục nếu lỗi này xảy ra
+      }
+      
+    } catch (err) {
+      console.error('Error in checkout:', err);
+      toast.error(err.response?.data?.message || 'Đã xảy ra lỗi khi xử lý thanh toán');
       setProcessingPayment(false);
     }
   };
+
+  // Nếu đang tải dữ liệu user, hiện loading
+  if (userLoading) {
+    return <div className="flex justify-center items-center h-screen">Đang tải...</div>;
+  }
+  
+  // Nếu chưa đăng nhập, chuyển hướng đến trang đăng nhập
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
 
   if (loading) {
     return (

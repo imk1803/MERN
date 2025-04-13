@@ -21,7 +21,7 @@ const OrderDetails = () => {
       console.log('Order details result:', result);
       
       if (result.success) {
-        setOrder(result.order);
+        setOrder(processOrderData(result.order));
       } else {
         setError(result.message || 'Không thể tải thông tin đơn hàng');
       }
@@ -100,6 +100,30 @@ const OrderDetails = () => {
       default:
         return status;
     }
+  };
+
+  // Xử lý dữ liệu đơn hàng để phù hợp với cấu trúc giao diện
+  const processOrderData = (orderData) => {
+    if (!orderData) return null;
+
+    return {
+      ...orderData,
+      // Tương thích với cấu trúc dữ liệu mới
+      customerDetails: {
+        name: orderData.name || '',
+        email: orderData.email || '',
+        phone: orderData.phone || '',
+        address: orderData.address || '',
+        city: orderData.city || '',
+      },
+      // Xử lý sản phẩm trong đơn hàng
+      products: Array.isArray(orderData.products) ? orderData.products.map(item => ({
+        ...item,
+        product: item.productId || item.product || {},
+        quantity: item.quantity || 1,
+        price: item.price || (item.productId?.price || 0)
+      })) : []
+    };
   };
 
   if (loading) {
