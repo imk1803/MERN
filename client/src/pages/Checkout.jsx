@@ -206,13 +206,19 @@ const Checkout = () => {
           }
         };
         
+        console.log('Payment data for banking:', paymentData);
+        
         const bankingRes = await initiateOnlineBankingPayment(paymentData);
+        console.log('Banking payment response:', bankingRes);
         
         if (bankingRes.success) {
           // Hiển thị thông tin chuyển khoản
           navigate(`/payment/banking/${orderId}`);
         } else {
-          toast.error('Không thể khởi tạo thanh toán ngân hàng');
+          // Hiển thị thông báo lỗi từ server nếu có
+          toast.error(bankingRes.message || 'Không thể khởi tạo thanh toán ngân hàng');
+          setProcessingPayment(false);
+          return; // Dừng xử lý tiếp theo
         }
       } else if (selectedPaymentMethod === 'cod') {
         // Thanh toán khi nhận hàng

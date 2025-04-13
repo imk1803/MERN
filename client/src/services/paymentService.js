@@ -32,11 +32,24 @@ const initiateMomoPayment = async (orderData) => {
  */
 const initiateOnlineBankingPayment = async (orderData) => {
   try {
+    console.log('Initiating banking payment with data:', orderData);
     const response = await paymentAPI.post('/payment/banking/create', orderData);
+    console.log('Banking payment response from API:', response.data);
     return response.data;
   } catch (error) {
     console.error('Lỗi khởi tạo thanh toán qua ngân hàng:', error);
-    throw error;
+    if (error.response) {
+      console.error('Error response:', error.response.data);
+      console.error('Error status:', error.response.status);
+    } else if (error.request) {
+      console.error('Error request:', error.request);
+    }
+    
+    // Trả về đối tượng lỗi để xử lý ở UI
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Không thể kết nối đến máy chủ thanh toán'
+    };
   }
 };
 

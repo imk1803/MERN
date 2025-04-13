@@ -58,14 +58,41 @@ const PaymentResult = () => {
         } 
         // Nếu là chuyển khoản ngân hàng
         else if (type === 'banking') {
-          setStatus('pending');
-          setMessage('Vui lòng hoàn tất chuyển khoản ngân hàng theo thông tin bên dưới.');
+          try {
+            setStatus('pending');
+            setMessage('Vui lòng hoàn tất chuyển khoản ngân hàng theo thông tin bên dưới.');
 
-          // Lấy thông tin giao dịch từ server
-          const orderId = searchParams.get('id');
-          if (orderId) {
-            const orderDetails = await axios.get(`http://localhost:5000/api/payment/verify/${orderId}`);
-            setOrderData(orderDetails.data);
+            // Lấy thông tin giao dịch từ server
+            const orderId = window.location.pathname.split('/').pop();
+            console.log('Banking orderId from path:', orderId);
+            
+            if (orderId) {
+              const orderResponse = await axios.get(`http://localhost:5000/api/payment/verify/${orderId}`);
+              console.log('Banking order details:', orderResponse.data);
+              
+              if (orderResponse.data.success) {
+                setOrderData(orderResponse.data);
+                
+                // Kiểm tra nếu thiếu paymentDetails, tạo thông tin thanh toán giả
+                if (!orderResponse.data.paymentDetails) {
+                  setOrderData({
+                    ...orderResponse.data,
+                    paymentDetails: {
+                      bankId: orderResponse.data.paymentDetails?.bankId || 'VIETCOMBANK',
+                      amount: orderResponse.data.totalAmount,
+                      transferContent: `Thanh toan ${orderId}`
+                    }
+                  });
+                }
+              } else {
+                setStatus('error');
+                setMessage('Không thể tải thông tin thanh toán. Vui lòng liên hệ hỗ trợ.');
+              }
+            }
+          } catch (error) {
+            console.error('Lỗi lấy thông tin đơn hàng:', error);
+            setStatus('error');
+            setMessage('Đã xảy ra lỗi khi tải thông tin thanh toán. Vui lòng liên hệ hỗ trợ.');
           }
         }
         // Trường hợp thành công chung
@@ -127,7 +154,47 @@ const PaymentResult = () => {
   };
 
   const renderBankingDetails = () => {
-    if (status !== 'pending' || !orderData?.paymentDetails) return null;
+    if (status !== 'pending') return null;
+
+    // Nếu không có dữ liệu thanh toán, hiển thị thông tin mặc định
+    if (!orderData?.paymentDetails) {
+      return (
+        <div className="mt-6 border rounded-lg p-6 bg-yellow-50">
+          <h3 className="text-lg font-bold mb-4">Thông tin chuyển khoản</h3>
+          
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span className="font-medium">Ngân hàng:</span>
+              <span>VIETCOMBANK</span>
+            </div>
+            
+            <div className="flex justify-between">
+              <span className="font-medium">Số tài khoản:</span>
+              <span>0123456789</span>
+            </div>
+            
+            <div className="flex justify-between">
+              <span className="font-medium">Chủ tài khoản:</span>
+              <span>CONG TY MERN</span>
+            </div>
+            
+            <div className="flex justify-between">
+              <span className="font-medium">Nội dung chuyển khoản:</span>
+              <span className="font-bold">Thanh toan {window.location.pathname.split('/').pop()}</span>
+            </div>
+          </div>
+          
+          <div className="mt-4 p-3 bg-yellow-100 rounded-lg text-sm">
+            <p className="font-medium">Lưu ý:</p>
+            <ul className="list-disc pl-5 mt-1">
+              <li>Vui lòng chuyển khoản chính xác số tiền và nội dung chuyển khoản</li>
+              <li>Đơn hàng sẽ được xử lý trong vòng 24h sau khi nhận được thanh toán</li>
+              <li>Nếu cần hỗ trợ, vui lòng liên hệ qua email: support@example.com</li>
+            </ul>
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div className="mt-6 border rounded-lg p-6 bg-yellow-50">
@@ -151,12 +218,16 @@ const PaymentResult = () => {
           
           <div className="flex justify-between">
             <span className="font-medium">Số tiền:</span>
-            <span className="text-red-600 font-bold">{orderData.paymentDetails.amount.toLocaleString('vi-VN')} VNĐ</span>
+            <span className="text-red-600 font-bold">
+              {(orderData.paymentDetails.amount || orderData.totalAmount || 0).toLocaleString('vi-VN')} VNĐ
+            </span>
           </div>
           
           <div className="flex justify-between">
             <span className="font-medium">Nội dung chuyển khoản:</span>
-            <span className="font-bold">{orderData.paymentDetails.transferContent}</span>
+            <span className="font-bold">
+              {orderData.paymentDetails.transferContent || `Thanh toan ${orderData._id}`}
+            </span>
           </div>
         </div>
         
@@ -201,7 +272,7 @@ const PaymentResult = () => {
           
           {status === 'success' && (
             <button 
-              onClick={() => navigate('/user/orders')}
+              onClick={() => navigate('/my-orders')}
               className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
             >
               Xem đơn hàng

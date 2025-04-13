@@ -247,7 +247,7 @@ router.post('/banking/create', async (req, res) => {
     };
     
     // Lưu thông tin đơn hàng và cập nhật trạng thái
-    await Order.findOneAndUpdate(
+    const order = await Order.findOneAndUpdate(
       { _id: orderId },
       { 
         status: 'pending',
@@ -257,12 +257,13 @@ router.post('/banking/create', async (req, res) => {
           amount: amount,
           transferContent: accountDetails.content
         }
-      }
+      },
+      { new: true } // Trả về document sau khi cập nhật
     );
     
     // After creating the order, if there's an error in the bank transfer process
     if (!order || !order.paymentDetails) {
-        await setFailedPaymentExpiry(order._id, 'Failed to set up bank transfer');
+        await setFailedPaymentExpiry(orderId, 'Failed to set up bank transfer');
         return res.status(400).json({ success: false, message: 'Failed to set up bank transfer' });
     }
     
