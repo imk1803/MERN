@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
+const Category = require('../models/Category');
 
 
 // ========================== ROUTES API JSON ==========================
@@ -22,7 +23,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const id = req.params.id.trim(); // ✅ Trim để loại bỏ \n hoặc space
-        const product = await Product.findById(id);
+        const product = await Product.findById(id).populate('category', 'name');
 
         if (!product) return res.status(404).json({ message: "Sản phẩm không tồn tại" });
 
@@ -35,6 +36,36 @@ router.get('/:id', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Lỗi lấy chi tiết sản phẩm" });
+    }
+});
+
+// API để lấy thông tin danh mục theo ID
+router.get('/categories/:id', async (req, res) => {
+    try {
+        const categoryId = req.params.id.trim();
+        const category = await Category.findById(categoryId);
+        
+        if (!category) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "Danh mục không tồn tại" 
+            });
+        }
+        
+        res.json({ 
+            success: true, 
+            category: {
+                _id: category._id,
+                name: category.name,
+                slug: category.slug
+            } 
+        });
+    } catch (err) {
+        console.error('Error fetching category:', err);
+        res.status(500).json({ 
+            success: false, 
+            message: "Lỗi khi lấy thông tin danh mục" 
+        });
     }
 });
 

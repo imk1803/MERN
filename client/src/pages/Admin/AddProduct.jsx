@@ -1,146 +1,361 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import '../styles/AdminStyles.css';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { createProduct } from '../../services/adminProductService';
+import { getCategories } from '../../services/adminCategoryService';
+import AdminSidebar from '../../components/AdminSidebar';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
 const AddProduct = () => {
   const navigate = useNavigate();
-  const [product, setProduct] = useState({
+  const location = useLocation();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
+  const [categories, setCategories] = useState([]);
+  
+  // Product form state
+  const [productData, setProductData] = useState({
     name: '',
     price: '',
-    image: '',
+    description: '',
     category: '',
-    rating: '',
-    description: ''
+    stock: '',
+    rating: ''
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleChange = (e) => {
+  
+  // File upload state
+  const [file, setFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState('');
+  
+  // Load existing categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await getCategories();
+        if (response.success) {
+          // Make sure we only use the necessary fields from categories
+          const simplifiedCategories = response.categories.map(cat => ({
+            _id: cat._id,
+            name: cat.name
+          }));
+          setCategories(simplifiedCategories);
+        }
+      } catch (err) {
+        console.error('Error fetching categories:', err);
+      }
+    };
+    
+    fetchCategories();
+  }, []);
+  
+  // Handle form input changes
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setProduct({ ...product, [name]: value });
+    setProductData({
+      ...productData,
+      [name]: value
+    });
   };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      setLoading(true);
-      setError('');
-      await axios.post('http://localhost:5000/api/admin/products', product, { withCredentials: true });
-      setLoading(false);
-      navigate('/admin/products');
-    } catch (err) {
-      setLoading(false);
-      setError(err.response?.data?.message || 'Đã xảy ra lỗi khi thêm sản phẩm');
+  
+  // Handle file input change
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      
+      // Create preview URL
+      const fileReader = new FileReader();
+      fileReader.onload = () => {
+        setPreviewUrl(fileReader.result);
+      };
+      fileReader.readAsDataURL(selectedFile);
     }
   };
-
+  
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+    
+    try {
+      // Validate form
+      if (!productData.name.trim()) {
+        setError('Tên sản phẩm là bắt buộc');
+        setLoading(false);
+        return;
+      }
+      
+      if (!productData.price || isNaN(parseFloat(productData.price)) || parseFloat(productData.price) <= 0) {
+        setError('Giá sản phẩm không hợp lệ');
+        setLoading(false);
+        return;
+      }
+      
+      // Create FormData object
+      const formData = new FormData();
+      
+      // Append product data
+      Object.keys(productData).forEach(key => {
+        if (productData[key]) {
+          formData.append(key, productData[key]);
+        }
+      });
+      
+      // Append file if selected
+      if (file) {
+        formData.append('image', file);
+      }
+      
+      // Submit form
+      const response = await createProduct(formData);
+      
+      if (response.success) {
+        setSuccess(true);
+        // Reset form
+        setProductData({
+          name: '',
+          price: '',
+          description: '',
+          category: '',
+          stock: '',
+          rating: ''
+        });
+        setFile(null);
+        setPreviewUrl('');
+        
+        // Redirect after success
+        setTimeout(() => {
+          navigate('/admin/products');
+        }, 2000);
+      } else {
+        setError(response.message || 'Có lỗi xảy ra khi thêm sản phẩm');
+      }
+    } catch (err) {
+      console.error('Error creating product:', err);
+      setError(err.response?.data?.message || 'Không thể kết nối đến server');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   return (
-    <div className="admin-page">
-      <div className="admin-container">
-        {/* Sidebar */}
-        <div className="admin-sidebar">
-          <h4>Admin Panel</h4>
-          <Link to="/admin/dashboard"><i className="fas fa-tachometer-alt"></i> Dashboard</Link>
-          <Link to="/admin/users"><i className="fas fa-users"></i> Users</Link>
-          <Link to="/admin/products"><i className="fas fa-box"></i> Products</Link>
-          <Link to="/admin/orders"><i className="fas fa-shopping-cart"></i> Orders</Link>
-          <Link to="/"><i className="fas fa-arrow-left"></i> Quay lại trang chủ</Link>
+    <div className="flex h-screen bg-gray-50">
+      <AdminSidebar />
+      
+      <div className="flex-1 p-8 overflow-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-800">Thêm Sản Phẩm Mới</h1>
+          <Link 
+            to="/admin/products" 
+            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md flex items-center"
+          >
+            <i className="bi bi-arrow-left mr-2"></i>
+            Quay lại
+          </Link>
         </div>
-
-        {/* Main Content */}
-        <div className="admin-content container">
-          <h2 className="text-center mb-4">Thêm sản phẩm mới</h2>
-
-          {error && <div className="alert alert-danger">{error}</div>}
-
-          <form onSubmit={handleSubmit} className="card shadow p-4">
-            <div className="mb-3">
-              <label htmlFor="name" className="form-label">Tên sản phẩm:</label>
-              <input 
-                type="text" 
-                className="form-control" 
-                id="name" 
-                name="name" 
-                value={product.name}
-                onChange={handleChange}
-                required 
-              />
+        
+        {/* Success Message */}
+        {success && (
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+            <div className="flex items-center">
+              <i className="bi bi-check-circle mr-2"></i>
+              <span>Thêm sản phẩm thành công! Đang chuyển hướng...</span>
             </div>
-
-            <div className="mb-3">
-              <label htmlFor="price" className="form-label">Giá:</label>
-              <input 
-                type="number" 
-                className="form-control" 
-                id="price" 
-                name="price" 
-                value={product.price}
-                onChange={handleChange}
-                required 
-              />
+          </div>
+        )}
+        
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <div className="flex items-center">
+              <i className="bi bi-exclamation-triangle mr-2"></i>
+              <span>{error}</span>
             </div>
-
-            <div className="mb-3">
-              <label htmlFor="image" className="form-label">Hình ảnh (URL:/images/...):</label>
-              <input 
-                type="text" 
-                className="form-control" 
-                id="image" 
-                name="image"
-                value={product.image}
-                onChange={handleChange} 
-              />
-            </div>
-
-            <div className="mb-3">
-              <label htmlFor="category" className="form-label">Danh mục:</label>
-              <input 
-                type="text" 
-                className="form-control" 
-                id="category" 
-                name="category"
-                value={product.category}
-                onChange={handleChange} 
-              />
-            </div>
-
-            <div className="mb-3">
-              <label htmlFor="rating" className="form-label">Rating (1-5):</label>
-              <input 
-                type="number" 
-                step="0.1" 
-                className="form-control" 
-                id="rating" 
-                name="rating"
-                value={product.rating}
-                onChange={handleChange} 
-              />
-            </div>
-
-            <div className="mb-3">
-              <label htmlFor="description" className="form-label">Mô tả:</label>
-              <textarea 
-                className="form-control" 
-                id="description" 
-                name="description" 
-                rows="3"
-                value={product.description}
-                onChange={handleChange}
-              ></textarea>
-            </div>
-
-            <div className="d-flex gap-2">
-              <button 
-                type="submit" 
-                className="btn btn-success"
-                disabled={loading}
-              >
-                {loading ? 'Đang xử lý...' : 'Thêm sản phẩm'}
-              </button>
-              <Link to="/admin/products" className="btn btn-secondary">Hủy</Link>
-            </div>
-          </form>
+          </div>
+        )}
+        
+        {/* Add Product Form */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="p-6">
+            <form onSubmit={handleSubmit}>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-2 space-y-6">
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                      Tên sản phẩm <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="name"
+                      name="name"
+                      value={productData.name}
+                      onChange={handleInputChange}
+                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
+                        Giá (VNĐ) <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        id="price"
+                        name="price"
+                        value={productData.price}
+                        onChange={handleInputChange}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        required
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="stock" className="block text-sm font-medium text-gray-700 mb-1">
+                        Số lượng kho
+                      </label>
+                      <input
+                        type="number"
+                        id="stock"
+                        name="stock"
+                        value={productData.stock}
+                        onChange={handleInputChange}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        min="0"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                        Danh mục
+                      </label>
+                      <select
+                        id="category"
+                        name="category"
+                        value={productData.category}
+                        onChange={handleInputChange}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      >
+                        <option value="">-- Chọn danh mục --</option>
+                        {categories.map((category) => (
+                          <option key={category._id} value={category._id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      {productData.category === 'new' ? (
+                        <div>
+                          <label htmlFor="newCategory" className="block text-sm font-medium text-gray-700 mb-1">
+                            Danh mục mới
+                          </label>
+                          <input
+                            type="text"
+                            id="newCategory"
+                            name="category"
+                            value=""
+                            onChange={handleInputChange}
+                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            placeholder="Nhập tên danh mục mới"
+                          />
+                        </div>
+                      ) : (
+                        <div>
+                          <label htmlFor="rating" className="block text-sm font-medium text-gray-700 mb-1">
+                            Đánh giá (0-5)
+                          </label>
+                          <input
+                            type="number"
+                            id="rating"
+                            name="rating"
+                            value={productData.rating}
+                            onChange={handleInputChange}
+                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            min="0"
+                            max="5"
+                            step="0.1"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                      Mô tả sản phẩm
+                    </label>
+                    <textarea
+                      id="description"
+                      name="description"
+                      value={productData.description}
+                      onChange={handleInputChange}
+                      rows="5"
+                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    ></textarea>
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="mb-4">
+                    <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-1">
+                      Hình ảnh sản phẩm
+                    </label>
+                    <input
+                      type="file"
+                      id="image"
+                      name="image"
+                      onChange={handleFileChange}
+                      accept="image/*"
+                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <p className="mt-1 text-sm text-gray-500">
+                      Kích thước tối đa: 5MB. Định dạng: JPG, PNG, WEBP
+                    </p>
+                  </div>
+                  
+                  {previewUrl && (
+                    <div className="mt-4">
+                      <p className="text-sm font-medium text-gray-700 mb-2">Xem trước:</p>
+                      <img
+                        src={previewUrl}
+                        alt="Preview"
+                        className="w-full h-auto rounded-md object-cover max-h-48"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="mt-8">
+                <button
+                  type="submit"
+                  className="w-full md:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Đang xử lý...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-plus-circle mr-2"></i>
+                      Thêm sản phẩm
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>

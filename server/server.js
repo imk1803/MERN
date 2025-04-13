@@ -26,6 +26,7 @@ const adminUserRoutes = require('./routers/admin-user');
 const adminProductRoutes = require('./routers/admin-product');
 const adminOrderRoutes = require('./routers/admin-order');
 const adminStatsRoutes = require('./routers/admin-stats');
+const adminCategoryRoutes = require('./routers/admin-category');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -107,6 +108,7 @@ app.use('/admin', adminRoutes);
 app.use(`${API_PREFIX}/admin/users`, adminUserRoutes);
 app.use(`${API_PREFIX}/admin/products`, adminProductRoutes);
 app.use(`${API_PREFIX}/admin/orders`, adminOrderRoutes);
+app.use(`${API_PREFIX}/admin/categories`, adminCategoryRoutes);
 app.use(`${API_PREFIX}/admin`, adminStatsRoutes);
 
 // Health Check Route

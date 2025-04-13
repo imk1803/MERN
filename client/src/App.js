@@ -19,6 +19,11 @@ import Footer from './components/Footer';
 import SearchResult from './components/SearchResult';
 import { NotificationProvider } from './contexts/NotificationContext';
 import AdminDashboard from './pages/Admin/AdminDashboard';
+import AdminProducts from './pages/Admin/Products';
+import AddProduct from './pages/Admin/AddProduct';
+import EditProduct from './pages/Admin/EditProduct';
+import Categories from './pages/Admin/Categories';
+import CategoryForm from './pages/Admin/CategoryForm';
 import ProtectedRoute from './components/ProtectedRoute';
 import AccessDenied from './pages/AccessDenied';
 
@@ -53,32 +58,68 @@ const AppContent = () => {
   }
 
   return (
-    <Router>
-      <AppLayout>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/products" element={<ProductList />} />
-          <Route path="/products/:id" element={<ProductDetail />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/search" element={<SearchResult />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/payment/result" element={<PaymentResult />} />
-          <Route path="/payment/:type" element={<PaymentResult />} />
-          <Route path="/payment/:type/:id" element={<PaymentResult />} />
-          <Route path="/payment/success" element={<PaymentResult />} />
-          <Route path="/admin/*" element={
-            <ProtectedRoute>
-              <AdminDashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/access-denied" element={<AccessDenied />} />
-        </Routes>
-      </AppLayout>
-    </Router>
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/cart" element={<Cart />} />
+      <Route path="/checkout" element={<Checkout />} />
+      <Route path="/products" element={<ProductList />} />
+      <Route path="/products/:id" element={<ProductDetail />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/search" element={<SearchResult />} />
+      <Route path="/profile" element={<Profile />} />
+      <Route path="/payment/result" element={<PaymentResult />} />
+      <Route path="/payment/:type" element={<PaymentResult />} />
+      <Route path="/payment/:type/:id" element={<PaymentResult />} />
+      <Route path="/payment/success" element={<PaymentResult />} />
+      
+      {/* Admin Routes */}
+      <Route path="/admin" element={
+        <ProtectedRoute>
+          <AdminDashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/dashboard" element={
+        <ProtectedRoute>
+          <AdminDashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/products" element={
+        <ProtectedRoute>
+          <AdminProducts />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/products/add" element={
+        <ProtectedRoute>
+          <AddProduct />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/products/:id" element={
+        <ProtectedRoute>
+          <EditProduct />
+        </ProtectedRoute>
+      } />
+      
+      {/* Category Management Routes */}
+      <Route path="/admin/categories" element={
+        <ProtectedRoute>
+          <Categories />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/categories/add" element={
+        <ProtectedRoute>
+          <CategoryForm />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/categories/:id" element={
+        <ProtectedRoute>
+          <CategoryForm />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/access-denied" element={<AccessDenied />} />
+    </Routes>
   );
 };
 
@@ -86,7 +127,11 @@ const App = () => {
   return (
     <Provider store={store}>
       <NotificationProvider>
-        <AppContent />
+        <Router>
+          <AppLayout>
+            <AppContent />
+          </AppLayout>
+        </Router>
       </NotificationProvider>
     </Provider>
   );

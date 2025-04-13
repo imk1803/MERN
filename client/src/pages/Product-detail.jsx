@@ -22,6 +22,7 @@ const styles = {
 const ProductDetail = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
+  const [categoryName, setCategoryName] = useState('');
   const navigate = useNavigate();
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
 
@@ -30,13 +31,48 @@ const ProductDetail = () => {
       try {
         const res = await axios.get(`/api/products/${id}`);
         setProduct(res.data.product);
+        
+        // Handle different category formats and extract the name
+        const categoryData = res.data.product.category;
+        if (categoryData) {
+          if (typeof categoryData === 'object' && categoryData.name) {
+            // If category is a populated object with name property
+            setCategoryName(categoryData.name);
+          } else if (typeof categoryData === 'object' && categoryData._id) {
+            // If category is an object with just ID, fetch the category name
+            fetchCategoryName(categoryData._id);
+          } else if (typeof categoryData === 'string') {
+            // If category is a string ID, fetch the category name
+            fetchCategoryName(categoryData);
+          } else {
+            setCategoryName('Không xác định');
+          }
+        } else {
+          setCategoryName('Không xác định');
+        }
       } catch (err) {
         console.error('Lỗi khi lấy chi tiết sản phẩm:', err);
         showNotification('Không thể tải chi tiết sản phẩm!', 'error');
       }
     };
+    
     fetchProduct();
   }, [id]);
+  
+  // Function to fetch category name by ID
+  const fetchCategoryName = async (categoryId) => {
+    try {
+      const res = await axios.get(`/api/products/categories/${categoryId}`);
+      if (res.data && res.data.success && res.data.category) {
+        setCategoryName(res.data.category.name);
+      } else {
+        setCategoryName('Không xác định');
+      }
+    } catch (err) {
+      console.error('Error fetching category:', err);
+      setCategoryName('Không xác định');
+    }
+  };
 
   const showNotification = (message, type) => {
     setNotification({ show: true, message, type });
@@ -79,6 +115,10 @@ const ProductDetail = () => {
               src={product.image}
               alt={product.name}
               className="w-full h-80 object-cover rounded-lg"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "https://placehold.co/400x300?text=No+Image";
+              }}
             />
           </div>
 
@@ -91,7 +131,7 @@ const ProductDetail = () => {
               </span>
             </p>
             <p className="text-gray-600">
-              <strong>Danh mục:</strong> {product.category}
+              <strong>Danh mục:</strong> {categoryName}
             </p>
             <p className="text-gray-600">
               <strong>Đánh giá:</strong> {product.rating}/5⭐

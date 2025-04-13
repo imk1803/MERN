@@ -1,0 +1,411 @@
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
+import { getCategories, getCategoryById, createCategory, updateCategory } from '../../services/adminCategoryService';
+
+// Sidebar component
+const Sidebar = ({ location }) => {
+  const menuItems = [
+    { path: '/admin/dashboard', icon: 'fas fa-tachometer-alt', label: 'Dashboard' },
+    { path: '/admin/products', icon: 'fas fa-box', label: 'Products' },
+    { path: '/admin/categories', icon: 'fas fa-tags', label: 'Categories' },
+    { path: '/admin/orders', icon: 'fas fa-shopping-cart', label: 'Orders' },
+    { path: '/admin/users', icon: 'fas fa-users', label: 'Users' },
+    { path: '/', icon: 'fas fa-home', label: 'Home' }
+  ];
+
+  return (
+    <div className="w-64 bg-white shadow-lg">
+      <div className="p-6">
+        <img
+          src="https://i.pinimg.com/736x/43/5d/09/435d096b52b0be4816d214c05ab0c22e.jpg"
+          alt="Logo"
+          className="h-10 w-10 rounded-full mb-2"
+        />
+        <h1 className="text-2xl font-bold text-indigo-600">CurvoTech Admin</h1>
+      </div>
+      <nav className="mt-4">
+        <ul>
+          {menuItems.map((item) => (
+            <li
+              key={item.path}
+              className={`px-6 py-3 ${
+                location.pathname === item.path
+                  ? 'bg-indigo-50 text-indigo-600 border-r-4 border-indigo-600'
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <Link to={item.path} className="flex items-center">
+                <i className={`${item.icon} mr-3`}></i>
+                <span className="font-medium">{item.label}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </div>
+  );
+};
+
+// Helper to create a flattened option list with indentation for hierarchy
+const createCategoryOptions = (categories, categoryId = null) => {
+  if (!categories) return [];
+  
+  const options = [];
+  
+  // Helper function to build nested options
+  const buildOptions = (cats, level = 0, parentChain = []) => {
+    cats.forEach(cat => {
+      // Skip the current category and its children (to prevent circular references)
+      if (categoryId && cat._id === categoryId) return;
+      
+      // Check for circular reference in parent chain
+      if (parentChain.includes(cat._id)) return;
+      
+      const indent = ' '.repeat(level * 4);
+      options.push({
+        value: cat._id,
+        label: `${indent}${cat.name}`,
+        level: level
+      });
+      
+      // Recursively process children
+      if (cat.children && cat.children.length > 0) {
+        buildOptions(cat.children, level + 1, [...parentChain, cat._id]);
+      }
+    });
+  };
+  
+  buildOptions(categories);
+  return options;
+};
+
+const CategoryForm = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { id } = useParams();
+  const isEditMode = !!id;
+  
+  const [loading, setLoading] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
+  const [categories, setCategories] = useState([]);
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    isActive: true
+  });
+  
+  // File upload state
+  const [file, setFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState('');
+  
+  // Load categories and category data (if editing)
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Fetch all categories for parent selection
+        const categoriesResponse = await getCategories();
+        
+        if (categoriesResponse.success) {
+          setCategories(categoriesResponse.categories || []);
+        }
+        
+        // If in edit mode, fetch the category data
+        if (isEditMode) {
+          const categoryResponse = await getCategoryById(id);
+          
+          if (categoryResponse.success) {
+            const { category } = categoryResponse;
+            setFormData({
+              name: category.name || '',
+              description: category.description || '',
+              isActive: category.isActive
+            });
+            
+            // Set preview if image exists
+            if (category.image) {
+              setPreviewUrl(
+                category.image.startsWith('http') 
+                  ? category.image 
+                  : `http://localhost:5000${category.image}`
+              );
+            }
+          } else {
+            setError(categoryResponse.message || 'Failed to load category');
+          }
+        }
+      } catch (err) {
+        console.error('Error loading data:', err);
+        setError(err.response?.data?.message || 'Unable to connect to server');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [id, isEditMode]);
+  
+  // Handle form input changes
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === 'checkbox' ? checked : value
+    });
+  };
+  
+  // Handle file input change
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      
+      // Create preview URL
+      const fileReader = new FileReader();
+      fileReader.onload = () => {
+        setPreviewUrl(fileReader.result);
+      };
+      fileReader.readAsDataURL(selectedFile);
+    }
+  };
+  
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaveLoading(true);
+    setError(null);
+    setSuccess(false);
+    
+    try {
+      // Validate form
+      if (!formData.name.trim()) {
+        setError('Category name is required');
+        setSaveLoading(false);
+        return;
+      }
+      
+      // Create FormData object
+      const submitData = new FormData();
+      
+      // Append category data
+      Object.keys(formData).forEach(key => {
+        if (formData[key] !== undefined && formData[key] !== null) {
+          submitData.append(key, formData[key]);
+        }
+      });
+      
+      // Append file if selected
+      if (file) {
+        submitData.append('image', file);
+      }
+      
+      // Submit form
+      let response;
+      if (isEditMode) {
+        response = await updateCategory(id, submitData);
+      } else {
+        response = await createCategory(submitData);
+      }
+      
+      if (response.success) {
+        setSuccess(true);
+        if (!isEditMode) {
+          // Reset form for new category
+          setFormData({
+            name: '',
+            description: '',
+            isActive: true
+          });
+          setFile(null);
+          setPreviewUrl('');
+        }
+        
+        // Redirect after success
+        setTimeout(() => {
+          navigate('/admin/categories');
+        }, 2000);
+      } else {
+        setError(response.message || 'Error saving category');
+      }
+    } catch (err) {
+      console.error('Error saving category:', err);
+      setError(err.response?.data?.message || 'Unable to connect to server');
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+  
+  // Create category options for the select dropdown
+  const categoryOptions = createCategoryOptions(categories, id);
+  
+  return (
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar location={location} />
+      
+      <div className="flex-1 p-8 overflow-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-800">
+            {isEditMode ? 'Edit Category' : 'Add New Category'}
+          </h1>
+          <Link 
+            to="/admin/categories" 
+            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md flex items-center"
+          >
+            <i className="fas fa-arrow-left mr-2"></i>
+            Back to Categories
+          </Link>
+        </div>
+        
+        {/* Success Message */}
+        {success && (
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+            <div className="flex items-center">
+              <i className="fas fa-check-circle mr-2"></i>
+              <span>
+                {isEditMode 
+                  ? 'Category updated successfully! Redirecting...' 
+                  : 'Category created successfully! Redirecting...'}
+              </span>
+            </div>
+          </div>
+        )}
+        
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <div className="flex items-center">
+              <i className="fas fa-exclamation-circle mr-2"></i>
+              <span>{error}</span>
+            </div>
+          </div>
+        )}
+        
+        {/* Loading State */}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center min-h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+            <p className="mt-4">Loading data...</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="p-6">
+              <form onSubmit={handleSubmit}>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="md:col-span-2 space-y-6">
+                    <div>
+                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                        Category Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                        Description
+                      </label>
+                      <textarea
+                        id="description"
+                        name="description"
+                        value={formData.description}
+                        onChange={handleInputChange}
+                        rows="4"
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      ></textarea>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="isActive"
+                        name="isActive"
+                        checked={formData.isActive}
+                        onChange={handleInputChange}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
+                        Active Category
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="mb-4">
+                      <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-1">
+                        Category Image
+                      </label>
+                      <input
+                        type="file"
+                        id="image"
+                        name="image"
+                        onChange={handleFileChange}
+                        accept="image/*"
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                      <p className="mt-1 text-sm text-gray-500">
+                        Max size: 5MB. Formats: JPG, PNG, WEBP
+                      </p>
+                    </div>
+                    
+                    {previewUrl && (
+                      <div className="mt-4">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Preview:</p>
+                        <img
+                          src={previewUrl}
+                          alt="Preview"
+                          className="w-full h-auto rounded-md object-cover max-h-48"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "https://placehold.co/200x200?text=No+Image";
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="mt-8">
+                  <button
+                    type="submit"
+                    className="w-full md:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={saveLoading}
+                  >
+                    {saveLoading ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <i className={`fas ${isEditMode ? 'fa-save' : 'fa-plus-circle'} mr-2`}></i>
+                        {isEditMode ? 'Update Category' : 'Add Category'}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default CategoryForm; 
