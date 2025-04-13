@@ -1,38 +1,191 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import { getOrders, deleteOrder } from '../../services/adminOrderService';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import AdminSidebar from '../../components/AdminSidebar';
+
+// Delete Confirmation Modal component
+const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, orderId }) => {
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 animate-fadeIn">
+        <div className="text-center mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 text-red-500 mb-4">
+            <i className="bi bi-exclamation-triangle-fill text-2xl"></i>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Xác nhận xóa</h3>
+          <p className="text-gray-600">
+            Bạn có chắc chắn muốn xóa đơn hàng <span className="font-medium">#{orderId?.slice(-8)}</span>?
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            Hành động này không thể hoàn tác.
+          </p>
+        </div>
+        <div className="flex justify-end space-x-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md transition"
+          >
+            Hủy bỏ
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition"
+          >
+            Xóa đơn hàng
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0
+  });
+  const [filters, setFilters] = useState({
+    search: '',
+    status: '',
+    dateFrom: '',
+    dateTo: ''
+  });
+  
+  // State for delete confirmation modal
+  const [deleteModal, setDeleteModal] = useState({
+    isOpen: false,
+    orderId: null
+  });
+  
   const location = useLocation();
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setLoading(true);
-        const res = await axios.get('http://localhost:5000/api/admin/orders', { withCredentials: true });
-        setOrders(res.data);
-        setLoading(false);
-      } catch (err) {
-        console.error('Lỗi khi lấy danh sách đơn hàng:', err);
-        setLoading(false);
+  const fetchOrders = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const options = {
+        ...filters,
+        page: pagination.page,
+        limit: pagination.limit
+      };
+      
+      const response = await getOrders(options);
+      
+      if (response.success) {
+        setOrders(response.orders);
+        setPagination({
+          ...pagination,
+          total: response.pagination.total,
+          totalPages: response.pagination.totalPages
+        });
+      } else {
+        setError(response.message || 'Có lỗi xảy ra khi tải dữ liệu');
       }
-    };
+    } catch (err) {
+      console.error('Lỗi khi lấy danh sách đơn hàng:', err);
+      setError('Không thể kết nối đến máy chủ');
+    } finally {
+      setLoading(false);
+    }
+  }, [filters, pagination.page, pagination.limit]);
 
+  useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [fetchOrders]);
 
   const handleDeleteOrder = async (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa đơn hàng này không?')) {
-      try {
-        await axios.delete(`http://localhost:5000/api/admin/orders/${id}`, { withCredentials: true });
-        setOrders(orders.filter(order => order._id !== id));
-      } catch (err) {
-        console.error('Lỗi khi xóa đơn hàng:', err);
+    // Open confirmation modal
+    setDeleteModal({
+      isOpen: true,
+      orderId: id
+    });
+  };
+  
+  const confirmDelete = async () => {
+    try {
+      setLoading(true);
+      const response = await deleteOrder(deleteModal.orderId);
+      
+      if (response.success) {
+        // Close modal
+        setDeleteModal({ isOpen: false, orderId: null });
+        
+        // Show success notification
+        const successMessage = document.createElement('div');
+        successMessage.className = 'fixed top-4 right-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-md z-50';
+        successMessage.innerHTML = '<div class="flex items-center"><i class="bi bi-check-circle-fill mr-2"></i>Đã xóa đơn hàng thành công!</div>';
+        document.body.appendChild(successMessage);
+        
+        // Remove notification after 3 seconds
+        setTimeout(() => {
+          document.body.removeChild(successMessage);
+        }, 3000);
+        
+        // Update the orders list
+        setOrders(orders.filter(order => order._id !== deleteModal.orderId));
+      } else {
+        setError(response.message || 'Có lỗi xảy ra khi xóa đơn hàng');
+        setDeleteModal({ isOpen: false, orderId: null });
       }
+    } catch (err) {
+      console.error('Lỗi khi xóa đơn hàng:', err);
+      setError('Không thể kết nối đến máy chủ');
+      setDeleteModal({ isOpen: false, orderId: null });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle filter changes
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters({
+      ...filters,
+      [name]: value
+    });
+  };
+
+  // Handle search submit
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    // Reset to page 1 when filters change
+    setPagination({
+      ...pagination,
+      page: 1
+    });
+    fetchOrders();
+  };
+
+  // Reset filters
+  const handleResetFilters = () => {
+    setFilters({
+      search: '',
+      status: '',
+      dateFrom: '',
+      dateTo: ''
+    });
+    setPagination({
+      ...pagination,
+      page: 1
+    });
+  };
+
+  // Pagination controls
+  const handlePageChange = (newPage) => {
+    if (newPage > 0 && newPage <= pagination.totalPages) {
+      setPagination({
+        ...pagination,
+        page: newPage
+      });
     }
   };
 
@@ -87,7 +240,104 @@ const Orders = () => {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-800">Quản lý Đơn hàng</h1>
           </div>
+          
+          {/* Filters */}
+          <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
+            <form onSubmit={handleSearchSubmit}>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label htmlFor="search" className="block text-xs font-medium text-gray-500 mb-1">
+                    Tìm kiếm
+                  </label>
+                  <input
+                    type="text"
+                    id="search"
+                    name="search"
+                    value={filters.search}
+                    onChange={handleFilterChange}
+                    placeholder="Tên khách hàng, email, mã đơn hàng..."
+                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="status" className="block text-xs font-medium text-gray-500 mb-1">
+                    Trạng thái
+                  </label>
+                  <select
+                    id="status"
+                    name="status"
+                    value={filters.status}
+                    onChange={handleFilterChange}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                  >
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="pending">Chờ xác nhận</option>
+                    <option value="processing">Đang xử lý</option>
+                    <option value="shipped">Đang giao hàng</option>
+                    <option value="delivered">Đã giao hàng</option>
+                    <option value="paid">Đã thanh toán</option>
+                    <option value="failed">Thanh toán thất bại</option>
+                    <option value="cancelled">Đã hủy</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label htmlFor="dateFrom" className="block text-xs font-medium text-gray-500 mb-1">
+                    Từ ngày
+                  </label>
+                  <input
+                    type="date"
+                    id="dateFrom"
+                    name="dateFrom"
+                    value={filters.dateFrom}
+                    onChange={handleFilterChange}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="dateTo" className="block text-xs font-medium text-gray-500 mb-1">
+                    Đến ngày
+                  </label>
+                  <input
+                    type="date"
+                    id="dateTo"
+                    name="dateTo"
+                    value={filters.dateTo}
+                    onChange={handleFilterChange}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end mt-4 space-x-2">
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded-md"
+                >
+                  Xóa bộ lọc
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-md"
+                >
+                  <i className="bi bi-search mr-2"></i>
+                  Lọc kết quả
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
+        
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <i className="bi bi-exclamation-triangle-fill mr-2"></i>
+            {error}
+          </div>
+        )}
         
         {loading ? (
           <div className="flex flex-col items-center justify-center min-h-64">
@@ -160,6 +410,51 @@ const Orders = () => {
                   ))}
                 </tbody>
               </table>
+              
+              {/* Pagination */}
+              {pagination.totalPages > 1 && (
+                <div className="px-6 py-4 flex justify-center">
+                  <nav className="flex items-center">
+                    <button
+                      onClick={() => handlePageChange(pagination.page - 1)}
+                      disabled={pagination.page === 1}
+                      className={`mr-2 px-2 py-1 rounded-md ${
+                        pagination.page === 1
+                          ? 'text-gray-400 cursor-not-allowed'
+                          : 'text-indigo-600 hover:bg-indigo-50'
+                      }`}
+                    >
+                      <i className="bi bi-chevron-left"></i>
+                    </button>
+                    
+                    {[...Array(pagination.totalPages).keys()].map(page => (
+                      <button
+                        key={page + 1}
+                        onClick={() => handlePageChange(page + 1)}
+                        className={`mx-1 px-3 py-1 rounded-md ${
+                          pagination.page === page + 1
+                            ? 'bg-indigo-600 text-white'
+                            : 'text-indigo-600 hover:bg-indigo-50'
+                        }`}
+                      >
+                        {page + 1}
+                      </button>
+                    ))}
+                    
+                    <button
+                      onClick={() => handlePageChange(pagination.page + 1)}
+                      disabled={pagination.page === pagination.totalPages}
+                      className={`ml-2 px-2 py-1 rounded-md ${
+                        pagination.page === pagination.totalPages
+                          ? 'text-gray-400 cursor-not-allowed'
+                          : 'text-indigo-600 hover:bg-indigo-50'
+                      }`}
+                    >
+                      <i className="bi bi-chevron-right"></i>
+                    </button>
+                  </nav>
+                </div>
+              )}
             </div>
           </div>
         ) : (
@@ -169,6 +464,14 @@ const Orders = () => {
           </div>
         )}
       </div>
+      
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, orderId: null })}
+        onConfirm={confirmDelete}
+        orderId={deleteModal.orderId}
+      />
     </div>
   );
 };

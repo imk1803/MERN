@@ -25,7 +25,6 @@ const orderSchema = new mongoose.Schema({
         failedAt: { type: Date },
         failedReason: { type: String }
     },
-    expiryDate: { type: Date },
     createdAt: { type: Date, default: Date.now }
 });
 

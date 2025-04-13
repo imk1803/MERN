@@ -62,7 +62,7 @@ app.use(cookieParser()); // Add cookie parser middleware
 app.use(cors({
     origin: process.env.CLIENT_URL || 'http://localhost:3000',
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
@@ -140,27 +140,6 @@ app.use((err, req, res, next) => {
         stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
 });
-
-// ========================== SCHEDULED TASKS ==========================
-// Hàm dọn dẹp đơn hàng cũ và thất bại
-const cleanupFailedOrders = async () => {
-  try {
-    console.log('Running scheduled task: Cleaning up failed orders...');
-    const result = await Order.deleteMany({
-      expiryDate: { $lt: new Date() }
-    });
-    console.log(`Cleaned up ${result.deletedCount} expired orders`);
-  } catch (error) {
-    console.error('Error cleaning up failed orders:', error);
-  }
-};
-
-// Chạy tác vụ dọn dẹp mỗi 24 giờ
-const CLEANUP_INTERVAL = 24 * 60 * 60 * 1000; // 24 giờ
-setInterval(cleanupFailedOrders, CLEANUP_INTERVAL);
-
-// Chạy tác vụ dọn dẹp ngay khi server khởi động
-setTimeout(cleanupFailedOrders, 5000);
 
 // ========================== SERVER STARTUP ==========================
 const server = app.listen(PORT, () => {

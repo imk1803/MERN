@@ -6,11 +6,11 @@ const AdminSidebar = () => {
   const location = useLocation();
   const menuItems = [
     { path: '/admin/dashboard', icon: 'bi bi-speedometer2', label: 'Dashboard' },
-    { path: '/admin/products', icon: 'bi bi-box', label: 'Products' },
-    { path: '/admin/categories', icon: 'bi bi-tags', label: 'Categories' },
-    { path: '/admin/orders', icon: 'bi bi-cart', label: 'Orders' },
-    { path: '/admin/users', icon: 'bi bi-people', label: 'Users' },
-    { path: '/', icon: 'bi bi-house', label: 'Home' }
+    { path: '/admin/products', icon: 'bi bi-box', label: 'Sản phẩm' },
+    { path: '/admin/categories', icon: 'bi bi-tags', label: 'Danh mục' },
+    { path: '/admin/orders', icon: 'bi bi-receipt', label: 'Đơn hàng' },
+    { path: '/admin/users', icon: 'bi bi-people', label: 'Người dùng' },
+    { path: '/', icon: 'bi bi-house', label: 'Trang chủ' }
   ];
 
   // Check if current path starts with the menu item path

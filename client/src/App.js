@@ -24,6 +24,8 @@ import AddProduct from './pages/Admin/AddProduct';
 import EditProduct from './pages/Admin/EditProduct';
 import Categories from './pages/Admin/Categories';
 import CategoryForm from './pages/Admin/CategoryForm';
+import Orders from './pages/Admin/Orders';
+import OrderDetail from './pages/Admin/OrderDetail';
 import ProtectedRoute from './components/ProtectedRoute';
 import AccessDenied from './pages/AccessDenied';
 
@@ -115,6 +117,18 @@ const AppContent = () => {
       <Route path="/admin/categories/:id" element={
         <ProtectedRoute>
           <CategoryForm />
+        </ProtectedRoute>
+      } />
+      
+      {/* Order Management Routes */}
+      <Route path="/admin/orders" element={
+        <ProtectedRoute>
+          <Orders />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/orders/:id" element={
+        <ProtectedRoute>
+          <OrderDetail />
         </ProtectedRoute>
       } />
       
