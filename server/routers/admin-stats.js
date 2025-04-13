@@ -81,7 +81,7 @@ router.get('/stats', authenticateToken, isAdmin, async (req, res) => {
     
     // Lấy 5 đơn hàng gần nhất
     const recentOrders = await Order.find()
-      .populate('userId', 'username')
+      .populate('user', 'username')
       .sort({ createdAt: -1 })
       .limit(5);
     

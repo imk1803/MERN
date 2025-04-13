@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { getOrders, deleteOrder } from '../../services/adminOrderService';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import AdminSidebar from '../../components/AdminSidebar';
@@ -65,30 +65,37 @@ const Orders = () => {
     orderId: null
   });
   
-  const location = useLocation();
-
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const options = {
-        ...filters,
-        page: pagination.page,
-        limit: pagination.limit
-      };
+      // Lấy giá trị từ state filters
+      const { search, status, dateFrom, dateTo } = filters;
+      const currentPage = pagination.page;
+      const currentLimit = pagination.limit;
       
-      const response = await getOrders(options);
+      console.log('Fetching orders with params:', { search, status, dateFrom, dateTo, page: currentPage, limit: currentLimit });
+      
+      // Gọi API với các tham số lọc
+      const response = await getOrders({
+        search,
+        status,
+        dateFrom,
+        dateTo,
+        page: currentPage,
+        limit: currentLimit
+      });
       
       if (response.success) {
         setOrders(response.orders);
-        setPagination({
-          ...pagination,
-          total: response.pagination.total,
-          totalPages: response.pagination.totalPages
-        });
+        setPagination(prev => ({
+          ...prev,
+          totalPages: response.pagination.totalPages,
+          total: response.pagination.total
+        }));
       } else {
-        setError(response.message || 'Có lỗi xảy ra khi tải dữ liệu');
+        setError(response.message || 'Có lỗi xảy ra khi tải danh sách đơn hàng');
       }
     } catch (err) {
       console.error('Lỗi khi lấy danh sách đơn hàng:', err);
@@ -148,21 +155,20 @@ const Orders = () => {
   // Handle filter changes
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters({
-      ...filters,
+    setFilters(prev => ({
+      ...prev,
       [name]: value
-    });
+    }));
   };
 
   // Handle search submit
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     // Reset to page 1 when filters change
-    setPagination({
-      ...pagination,
+    setPagination(prev => ({
+      ...prev,
       page: 1
-    });
-    fetchOrders();
+    }));
   };
 
   // Reset filters
@@ -173,10 +179,10 @@ const Orders = () => {
       dateFrom: '',
       dateTo: ''
     });
-    setPagination({
-      ...pagination,
+    setPagination(prev => ({
+      ...prev,
       page: 1
-    });
+    }));
   };
 
   // Pagination controls
@@ -365,7 +371,9 @@ const Orders = () => {
                         #{order._id.toString().slice(-8)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{order.name || 'Khách hàng'}</div>
+                        <div className="text-sm text-gray-900">
+                          {order.user?.username ? `${order.user.username} (${order.name})` : order.name || 'Khách hàng'}
+                        </div>
                         <div className="text-sm text-gray-500">{order.email || 'N/A'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -399,9 +407,9 @@ const Orders = () => {
                           </Link>
                           <button
                             onClick={() => handleDeleteOrder(order._id)}
-                            className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md transition-colors duration-200"
+                            className="text-red-600 hover:text-red-900 px-3 py-1 rounded-md transition-colors duration-200"
                           >
-                            <i className="bi bi-trash-fill mr-1"></i>
+                            <i className="bi bi-trash mr-1"></i>
                             Xóa
                           </button>
                         </div>
@@ -410,59 +418,35 @@ const Orders = () => {
                   ))}
                 </tbody>
               </table>
-              
-              {/* Pagination */}
-              {pagination.totalPages > 1 && (
-                <div className="px-6 py-4 flex justify-center">
-                  <nav className="flex items-center">
-                    <button
-                      onClick={() => handlePageChange(pagination.page - 1)}
-                      disabled={pagination.page === 1}
-                      className={`mr-2 px-2 py-1 rounded-md ${
-                        pagination.page === 1
-                          ? 'text-gray-400 cursor-not-allowed'
-                          : 'text-indigo-600 hover:bg-indigo-50'
-                      }`}
-                    >
-                      <i className="bi bi-chevron-left"></i>
-                    </button>
-                    
-                    {[...Array(pagination.totalPages).keys()].map(page => (
-                      <button
-                        key={page + 1}
-                        onClick={() => handlePageChange(page + 1)}
-                        className={`mx-1 px-3 py-1 rounded-md ${
-                          pagination.page === page + 1
-                            ? 'bg-indigo-600 text-white'
-                            : 'text-indigo-600 hover:bg-indigo-50'
-                        }`}
-                      >
-                        {page + 1}
-                      </button>
-                    ))}
-                    
-                    <button
-                      onClick={() => handlePageChange(pagination.page + 1)}
-                      disabled={pagination.page === pagination.totalPages}
-                      className={`ml-2 px-2 py-1 rounded-md ${
-                        pagination.page === pagination.totalPages
-                          ? 'text-gray-400 cursor-not-allowed'
-                          : 'text-indigo-600 hover:bg-indigo-50'
-                      }`}
-                    >
-                      <i className="bi bi-chevron-right"></i>
-                    </button>
-                  </nav>
-                </div>
-              )}
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm p-6 text-center">
-            <i className="bi bi-inbox text-4xl text-gray-400 mb-3 block"></i>
-            <p className="text-gray-500">Không có đơn hàng nào.</p>
+          <div className="flex flex-col items-center justify-center min-h-64">
+            <p className="text-gray-500">Không có đơn hàng nào được tìm thấy.</p>
           </div>
         )}
+        
+        {/* Pagination */}
+        <div className="mt-6 flex justify-center">
+          <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+            <button
+              onClick={() => handlePageChange(pagination.page - 1)}
+              disabled={pagination.page === 1}
+              className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium text-gray-500 hover:bg-gray-50 focus:z-10"
+            >
+              <i className="bi bi-chevron-left mr-2"></i>
+              Trang trước
+            </button>
+            <button
+              onClick={() => handlePageChange(pagination.page + 1)}
+              disabled={pagination.page === pagination.totalPages}
+              className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium text-gray-500 hover:bg-gray-50 focus:z-10"
+            >
+              Trang sau
+              <i className="bi bi-chevron-right ml-2"></i>
+            </button>
+          </nav>
+        </div>
       </div>
       
       {/* Delete Confirmation Modal */}

@@ -56,12 +56,18 @@ router.get('/', authenticateToken, isAdmin, async (req, res) => {
     
     // Lọc theo danh mục
     if (category) {
-      // Ensure category is a valid ObjectId
-      if (mongoose.Types.ObjectId.isValid(category)) {
-        query.category = new mongoose.Types.ObjectId(category);
-      } else {
-        // Fallback to categoryName for backward compatibility
-        query.categoryName = category;
+      try {
+        // Check if it's a valid ObjectId
+        if (mongoose.Types.ObjectId.isValid(category)) {
+          query.category = new mongoose.Types.ObjectId(category);
+        } else {
+          // Fallback to categoryName for backward compatibility
+          query.categoryName = category;
+        }
+      } catch (error) {
+        console.error('Invalid category format:', error);
+        // If there's an error, use a default query that won't match anything
+        query.category = null;
       }
     }
     
@@ -124,11 +130,28 @@ router.get('/', authenticateToken, isAdmin, async (req, res) => {
 // GET: Lấy danh sách các danh mục
 router.get('/categories', authenticateToken, isAdmin, async (req, res) => {
   try {
-    const categories = await Product.distinct('category');
+    // Replace distinct with an aggregation to get category info
+    const categories = await Product.aggregate([
+      { $lookup: { from: 'categories', localField: 'category', foreignField: '_id', as: 'categoryInfo' } },
+      { $unwind: { path: '$categoryInfo', preserveNullAndEmptyArrays: true } },
+      { $group: { 
+        _id: '$category', 
+        name: { $first: '$categoryInfo.name' },
+        count: { $sum: 1 }
+      }},
+      { $match: { _id: { $ne: null } } },
+      { $sort: { count: -1 } }
+    ]);
+    
+    // Format for client consumption
+    const formattedCategories = categories.map(cat => ({
+      _id: cat._id,
+      name: cat.name || 'Unknown'
+    }));
     
     res.json({
       success: true,
-      categories
+      categories: formattedCategories
     });
   } catch (err) {
     console.error('Lỗi khi lấy danh sách danh mục:', err);

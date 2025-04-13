@@ -1,64 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getCategories, getCategoryById, createCategory, updateCategory } from '../../services/adminCategoryService';
 import AdminSidebar from '../../components/AdminSidebar';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
-// Helper to create a flattened option list with indentation for hierarchy
-const createCategoryOptions = (categories, categoryId = null) => {
-  if (!categories) return [];
-  
-  const options = [];
-  
-  // Helper function to build nested options
-  const buildOptions = (cats, level = 0, parentChain = []) => {
-    cats.forEach(cat => {
-      // Skip the current category and its children (to prevent circular references)
-      if (categoryId && cat._id === categoryId) return;
-      
-      // Check for circular reference in parent chain
-      if (parentChain.includes(cat._id)) return;
-      
-      const indent = ' '.repeat(level * 4);
-      options.push({
-        value: cat._id,
-        label: `${indent}${cat.name}`,
-        level: level
-      });
-      
-      // Recursively process children
-      if (cat.children && cat.children.length > 0) {
-        buildOptions(cat.children, level + 1, [...parentChain, cat._id]);
-      }
-    });
-  };
-  
-  buildOptions(categories);
-  return options;
-};
-
 const CategoryForm = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { id } = useParams();
   const isEditMode = !!id;
   
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
-  const [categories, setCategories] = useState([]);
   
-  // Form state
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    isActive: true
+    isActive: true,
+    image: null
   });
   
-  // File upload state
-  const [file, setFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState('');
+  const [previewUrl, setPreviewUrl] = useState(null);
   
   // Load categories and category data (if editing)
   useEffect(() => {
@@ -71,7 +34,7 @@ const CategoryForm = () => {
         const categoriesResponse = await getCategories();
         
         if (categoriesResponse.success) {
-          setCategories(categoriesResponse.categories || []);
+          // setCategories(categoriesResponse.categories || []);
         }
         
         // If in edit mode, fetch the category data
@@ -83,7 +46,8 @@ const CategoryForm = () => {
             setFormData({
               name: category.name || '',
               description: category.description || '',
-              isActive: category.isActive
+              isActive: category.isActive,
+              image: category.image
             });
             
             // Set preview if image exists
@@ -122,7 +86,10 @@ const CategoryForm = () => {
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
-      setFile(selectedFile);
+      setFormData({
+        ...formData,
+        image: selectedFile
+      });
       
       // Create preview URL
       const fileReader = new FileReader();
@@ -159,8 +126,8 @@ const CategoryForm = () => {
       });
       
       // Append file if selected
-      if (file) {
-        submitData.append('image', file);
+      if (formData.image) {
+        submitData.append('image', formData.image);
       }
       
       // Submit form
@@ -178,10 +145,10 @@ const CategoryForm = () => {
           setFormData({
             name: '',
             description: '',
-            isActive: true
+            isActive: true,
+            image: null
           });
-          setFile(null);
-          setPreviewUrl('');
+          setPreviewUrl(null);
         }
         
         // Redirect after success
@@ -198,9 +165,6 @@ const CategoryForm = () => {
       setSaveLoading(false);
     }
   };
-  
-  // Create category options for the select dropdown
-  const categoryOptions = createCategoryOptions(categories, id);
   
   return (
     <div className="flex h-screen bg-gray-50">

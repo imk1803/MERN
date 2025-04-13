@@ -27,6 +27,7 @@ const adminProductRoutes = require('./routers/admin-product');
 const adminOrderRoutes = require('./routers/admin-order');
 const adminStatsRoutes = require('./routers/admin-stats');
 const adminCategoryRoutes = require('./routers/admin-category');
+const ordersRoutes = require('./routers/orders');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -102,6 +103,7 @@ app.use(`${API_PREFIX}/cart`, cartRoutes);
 app.use(`${API_PREFIX}/checkout`, checkoutRoutes);
 app.use(`${API_PREFIX}/payment`, paymentRoutes);
 app.use(`${API_PREFIX}/about`, aboutRoutes);
+app.use(`${API_PREFIX}/orders`, ordersRoutes);
 
 // Admin Routes with authentication check
 app.use('/admin', adminRoutes);

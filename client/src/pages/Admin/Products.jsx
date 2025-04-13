@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { getProducts, deleteProduct } from '../../services/adminProductService';
 import { getCategories } from '../../services/adminCategoryService';
 import 'bootstrap-icons/font/bootstrap-icons.css';
@@ -59,7 +59,6 @@ const Products = () => {
     sort: 'newest'
   });
   const [categories, setCategories] = useState([]);
-  const location = useLocation();
   
   // State for delete confirmation modal
   const [deleteModal, setDeleteModal] = useState({
@@ -68,76 +67,49 @@ const Products = () => {
     productName: ''
   });
 
-  // Fetch products with current filters and pagination
+  // Fetch products data
   const fetchProductsData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Get categories first to use for product mapping
-      const categoriesResponse = await getCategories();
-      if (categoriesResponse.success) {
-        // Make sure we only use the necessary fields from categories
-        const simplifiedCategories = categoriesResponse.categories.map(cat => ({
-          _id: cat._id,
-          name: cat.name
-        }));
-        setCategories(simplifiedCategories);
+      // Fetch categories first if not already loaded
+      if (categories.length === 0) {
+        try {
+          const categoriesResponse = await getCategories();
+          if (categoriesResponse.success) {
+            setCategories(categoriesResponse.categories);
+          } else {
+            console.error('Failed to load categories:', categoriesResponse.message);
+          }
+        } catch (error) {
+          console.error('Error fetching categories:', error);
+        }
       }
       
-      const options = {
-        ...filters,
-        page: pagination.page,
-        limit: pagination.limit
-      };
+      // Lấy giá trị từ state filters
+      const { search, category, sort } = filters;
+      const currentPage = pagination.page;
+      const currentLimit = pagination.limit;
       
-      const response = await getProducts(options);
+      console.log('Fetching products with filters:', { search, category, sort, page: currentPage, limit: currentLimit });
+      
+      // Gọi API với các tham số lọc
+      const response = await getProducts({
+        search,
+        category,
+        sort,
+        page: currentPage,
+        limit: currentLimit
+      });
       
       if (response.success) {
-        // Process products to ensure category is properly formatted
-        const processedProducts = response.products.map(product => {
-          // Make a copy of the product to avoid mutation
-          const processedProduct = { ...product };
-          
-          // Convert category to string or object with name if it's just an ID object
-          if (processedProduct.category) {
-            if (typeof processedProduct.category === 'object') {
-              // If category is an object with a name, use that
-              if (processedProduct.category.name) {
-                processedProduct.categoryName = processedProduct.category.name;
-              } 
-              // Otherwise try to find the category in our categories list
-              else {
-                const categoryList = categoriesResponse.success ? 
-                  categoriesResponse.categories || [] : [];
-                  
-                const matchingCategory = categoryList.find(
-                  cat => cat._id === (processedProduct.category._id || processedProduct.category)
-                );
-                
-                if (matchingCategory) {
-                  processedProduct.categoryName = matchingCategory.name;
-                } else {
-                  processedProduct.categoryName = 'Unknown';
-                }
-              }
-            } else if (typeof processedProduct.category === 'string') {
-              // If category is already a string, keep it as is
-              processedProduct.categoryName = processedProduct.category;
-            }
-          } else {
-            processedProduct.categoryName = 'N/A';
-          }
-          
-          return processedProduct;
-        });
-        
-        setProducts(processedProducts);
-        setPagination({
-          ...pagination,
-          total: response.pagination.total,
-          totalPages: response.pagination.totalPages
-        });
+        setProducts(response.products);
+        setPagination(prev => ({
+          ...prev,
+          totalPages: response.pagination.totalPages,
+          total: response.pagination.total
+        }));
       } else {
         setError(response.message || 'Có lỗi xảy ra khi tải dữ liệu');
       }
@@ -147,7 +119,7 @@ const Products = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters, pagination.page, pagination.limit]);
+  }, [filters, categories.length, pagination.page, pagination.limit]);
 
   useEffect(() => {
     fetchProductsData();
@@ -200,36 +172,31 @@ const Products = () => {
   // Handle filter changes
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters({
-      ...filters,
+    setFilters(prev => ({
+      ...prev,
       [name]: value
-    });
+    }));
     
     // Reset to page 1 when filters change
-    setPagination({
-      ...pagination,
+    setPagination(prev => ({
+      ...prev,
       page: 1
-    });
+    }));
   };
 
   // Handle search submit
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    // Fetch data with current filters and reset to page 1
-    setPagination({
-      ...pagination,
-      page: 1
-    });
-    fetchProductsData();
+    // No need to call fetchProductsData here as it will be triggered by the useEffect
   };
 
   // Pagination controls
   const handlePageChange = (newPage) => {
     if (newPage > 0 && newPage <= pagination.totalPages) {
-      setPagination({
-        ...pagination,
+      setPagination(prev => ({
+        ...prev,
         page: newPage
-      });
+      }));
     }
   };
 

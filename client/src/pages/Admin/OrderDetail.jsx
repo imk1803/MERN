@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { getOrderById, updateOrderStatus } from '../../services/adminOrderService';
 import AdminSidebar from '../../components/AdminSidebar';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 const OrderDetail = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -202,9 +201,41 @@ const OrderDetail = () => {
                   </div>
                   
                   <div>
-                    <p className="text-sm text-gray-500">Tổng tiền</p>
-                    <p className="font-semibold text-indigo-700">{formatCurrency(order.totalAmount)}</p>
+                    <p className="text-sm text-gray-500">Tài khoản đặt hàng</p>
+                    <p className="font-semibold">{order.user?.username || 'Khách vãng lai'}</p>
                   </div>
+                  
+                  <div>
+                    <p className="text-sm text-gray-500">Người nhận</p>
+                    <p className="font-semibold">{order.name || 'N/A'}</p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-gray-500">Email</p>
+                    <p className="font-semibold">{order.email || 'N/A'}</p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-gray-500">Số điện thoại</p>
+                    <p className="font-semibold">{order.phone || 'N/A'}</p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-gray-500">Tổng tiền</p>
+                    <p className="font-semibold">{formatCurrency(order.totalAmount)}</p>
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <p className="text-sm text-gray-500">Địa chỉ giao hàng</p>
+                    <p className="font-semibold">{order.address}{order.city ? `, ${order.city}` : ''}</p>
+                  </div>
+                  
+                  {order.note && (
+                    <div className="md:col-span-2">
+                      <p className="text-sm text-gray-500">Ghi chú</p>
+                      <p className="font-semibold">{order.note}</p>
+                    </div>
+                  )}
                 </div>
               </div>
               

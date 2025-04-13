@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
 import { getProfile, changePassword } from '../services/userService';
 
@@ -277,6 +277,17 @@ const Profile = () => {
                 <p className="text-gray-700">
                   <span className="font-semibold">Vai trò:</span> {user.role === 'admin' ? 'Quản trị viên' : 'Người dùng'}
                 </p>
+
+                {/* Add Order History Link */}
+                <div className="mt-4 pt-3 border-t border-gray-200">
+                  <Link 
+                    to="/my-orders" 
+                    className="inline-flex items-center text-indigo-600 hover:text-indigo-800"
+                  >
+                    <i className="bi bi-bag mr-2"></i>
+                    Xem lịch sử đơn hàng
+                  </Link>
+                </div>
               </div>
               
               <div className="p-4 bg-gray-50 rounded-lg">

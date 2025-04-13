@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { getCategories, deleteCategory } from '../../services/adminCategoryService';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import AdminSidebar from '../../components/AdminSidebar';
@@ -104,7 +104,6 @@ const Categories = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const location = useLocation();
   const navigate = useNavigate();
   
   // State for delete confirmation modal

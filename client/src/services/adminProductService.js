@@ -38,12 +38,18 @@ export const getProducts = async (options = {}) => {
     // Xây dựng query string
     const params = new URLSearchParams();
     if (search) params.append('search', search);
-    if (category) params.append('category', category);
+    if (category) {
+      console.log(`Filtering by category: ${category}`);
+      params.append('category', category);
+    }
     if (sort) params.append('sort', sort);
     params.append('page', page);
     params.append('limit', limit);
     
-    const response = await adminAxios.get(`?${params.toString()}`);
+    const queryString = params.toString();
+    console.log(`Fetching products with query: ${queryString}`);
+    
+    const response = await adminAxios.get(`?${queryString}`);
     
     // Process products to ensure category format is consistent
     if (response.data && response.data.success && response.data.products) {
@@ -57,14 +63,27 @@ export const getProducts = async (options = {}) => {
         }
         return product;
       });
+    } else if (!response.data.success) {
+      console.error('API returned error:', response.data.message);
     }
     
     return response.data;
   } catch (error) {
     console.error('Lỗi khi lấy danh sách sản phẩm:', error);
+    // Provide more detailed error information
+    let errorMessage = 'Không thể kết nối đến server';
+    if (error.response) {
+      errorMessage = error.response.data.message || errorMessage;
+      console.error('Server response error:', error.response.status, error.response.data);
+    } else if (error.request) {
+      console.error('No response received:', error.request);
+    } else {
+      console.error('Error setting up request:', error.message);
+    }
+    
     return {
       success: false,
-      message: error.response?.data?.message || 'Không thể kết nối đến server',
+      message: errorMessage,
       products: [],
       pagination: { total: 0, page: 1, limit: 10, totalPages: 0 },
       categories: []
@@ -159,19 +178,27 @@ export const deleteProduct = async (productId) => {
  */
 export const getCategories = async () => {
   try {
+    console.log('Fetching categories from API');
     // Change the endpoint to use the admin categories API instead
-    const response = await axios.get('http://localhost:5000/api/admin/categories', {
+    const response = await axios.get('http://localhost:5000/api/admin/products/categories', {
       withCredentials: true,
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`
       }
     });
+    
+    console.log('Categories received:', response.data);
     return response.data;
   } catch (error) {
     console.error('Lỗi khi lấy danh sách danh mục:', error);
+    let errorMessage = 'Không thể kết nối đến server';
+    if (error.response) {
+      errorMessage = error.response.data.message || errorMessage;
+    }
+    
     return {
       success: false,
-      message: error.response?.data?.message || 'Không thể kết nối đến server',
+      message: errorMessage,
       categories: [],
       flatCategories: []
     };

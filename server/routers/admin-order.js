@@ -50,7 +50,7 @@ router.get('/', authenticateToken, isAdmin, async (req, res) => {
     
     // Lấy danh sách đơn hàng với phân trang và lọc
     const orders = await Order.find(filter)
-      .populate('userId', 'username email')
+      .populate('user', 'username')
       .populate('products.productId', 'name price image')
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -154,7 +154,7 @@ router.get('/:id', authenticateToken, isAdmin, async (req, res) => {
     
     // Tìm đơn hàng theo ID và populate thông tin liên quan
     const order = await Order.findById(req.params.id)
-      .populate('userId', 'username email')
+      .populate('user', 'username email')
       .populate('products.productId', 'name price image category');
     
     // Kiểm tra nếu đơn hàng không tồn tại
@@ -206,7 +206,7 @@ router.patch('/:id/status', authenticateToken, isAdmin, async (req, res) => {
       req.params.id,
       { status },
       { new: true }
-    ).populate('userId', 'username email')
+    ).populate('user', 'username email')
      .populate('products.productId', 'name price image');
     
     // Kiểm tra nếu đơn hàng không tồn tại

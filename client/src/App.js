@@ -14,6 +14,8 @@ import ProductDetail from './pages/Product-detail';
 import About from './pages/About';
 import Profile from './pages/Profile';
 import PaymentResult from './pages/PaymentResult';
+import MyOrders from './pages/MyOrders';
+import OrderDetails from './pages/OrderDetails';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import SearchResult from './components/SearchResult';
@@ -25,8 +27,11 @@ import EditProduct from './pages/Admin/EditProduct';
 import Categories from './pages/Admin/Categories';
 import CategoryForm from './pages/Admin/CategoryForm';
 import Orders from './pages/Admin/Orders';
-import OrderDetail from './pages/Admin/OrderDetail';
+import AdminOrderDetail from './pages/Admin/OrderDetail';
+import Users from './pages/Admin/Users';
+import UserForm from './pages/Admin/UserForm';
 import ProtectedRoute from './components/ProtectedRoute';
+import UserProtectedRoute from './components/UserProtectedRoute';
 import AccessDenied from './pages/AccessDenied';
 
 // Layout component that conditionally renders Header and Footer
@@ -75,6 +80,18 @@ const AppContent = () => {
       <Route path="/payment/:type" element={<PaymentResult />} />
       <Route path="/payment/:type/:id" element={<PaymentResult />} />
       <Route path="/payment/success" element={<PaymentResult />} />
+      
+      {/* User Order Routes */}
+      <Route path="/my-orders" element={
+        <UserProtectedRoute>
+          <MyOrders />
+        </UserProtectedRoute>
+      } />
+      <Route path="/my-orders/:id" element={
+        <UserProtectedRoute>
+          <OrderDetails />
+        </UserProtectedRoute>
+      } />
       
       {/* Admin Routes */}
       <Route path="/admin" element={
@@ -128,7 +145,24 @@ const AppContent = () => {
       } />
       <Route path="/admin/orders/:id" element={
         <ProtectedRoute>
-          <OrderDetail />
+          <AdminOrderDetail />
+        </ProtectedRoute>
+      } />
+      
+      {/* User Management Routes */}
+      <Route path="/admin/users" element={
+        <ProtectedRoute>
+          <Users />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/users/add" element={
+        <ProtectedRoute>
+          <UserForm />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/users/:id" element={
+        <ProtectedRoute>
+          <UserForm />
         </ProtectedRoute>
       } />
       

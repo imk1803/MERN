@@ -129,6 +129,12 @@ const handleLogout = async () => {
               >
                 <i className="fas fa-user mr-2"></i> {user.username}
               </Link>
+              <Link
+                to="/my-orders"
+                className="text-gray-700 hover:text-blue-500 flex items-center"
+              >
+                <i className="fas fa-shopping-bag mr-2"></i> Đơn hàng của tôi
+              </Link>
               <button
                 onClick={handleLogout}
                 disabled={isLoggingOut}

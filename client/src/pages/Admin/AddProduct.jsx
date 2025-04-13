@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createProduct } from '../../services/adminProductService';
 import { getCategories } from '../../services/adminCategoryService';
 import AdminSidebar from '../../components/AdminSidebar';
@@ -7,7 +7,6 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 
 const AddProduct = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);

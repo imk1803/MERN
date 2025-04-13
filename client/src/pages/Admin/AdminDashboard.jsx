@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { Chart, registerables } from 'chart.js';
 import AdminSidebar from '../../components/AdminSidebar';
@@ -183,7 +183,6 @@ const AdminDashboard = () => {
     recentOrders: []
   });
   
-  const location = useLocation();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const chartRef = useRef(null);
