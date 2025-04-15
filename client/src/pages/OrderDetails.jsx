@@ -73,11 +73,11 @@ const OrderDetails = () => {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
       case 'processing':
-        return 'bg-blue-100 text-blue-800';
-      case 'shipped':
-        return 'bg-purple-100 text-purple-800';
-      case 'delivered':
-        return 'bg-green-100 text-green-800';
+        return 'bg-indigo-100 text-indigo-800';
+      case 'paid':
+        return 'bg-emerald-100 text-emerald-800';
+      case 'failed':
+        return 'bg-orange-100 text-orange-800';
       case 'cancelled':
         return 'bg-red-100 text-red-800';
       default:
@@ -88,13 +88,13 @@ const OrderDetails = () => {
   const getStatusText = (status) => {
     switch (status) {
       case 'pending':
-        return 'Chờ xử lý';
+        return 'Chờ xác nhận';
       case 'processing':
         return 'Đang xử lý';
-      case 'shipped':
-        return 'Đang giao hàng';
-      case 'delivered':
-        return 'Đã giao hàng';
+      case 'paid':
+        return 'Đã thanh toán';
+      case 'failed':
+        return 'Thanh toán thất bại';
       case 'cancelled':
         return 'Đã hủy';
       default:
@@ -195,7 +195,7 @@ const OrderDetails = () => {
               </span>
             </div>
             <div>
-              {order.status === 'pending' && (
+              {(order.status === 'pending' || order.status === 'processing') && (
                 <button
                   onClick={handleCancelOrder}
                   disabled={cancelling}
@@ -233,14 +233,61 @@ const OrderDetails = () => {
         <div className="p-6 border-b">
           <h2 className="text-lg font-semibold mb-4">Phương thức thanh toán</h2>
           <p className="font-medium">
-            {order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng (COD)' : order.paymentMethod}
+            {order.paymentMethod}
           </p>
-          {order.paymentDetails && (
-            <div className="mt-2">
-              <p className="text-sm text-gray-500">Trạng thái thanh toán</p>
-              <p className="font-medium">
-                {order.paymentDetails.status === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}
-              </p>
+          <div className="mt-2">
+            <p className="text-sm text-gray-500">Trạng thái thanh toán</p>
+            <p className="font-medium">
+              {order.status === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}
+            </p>
+          </div>
+          
+          {order.status === 'paid' && order.paymentDetails && (
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <h3 className="text-sm font-semibold mb-2">Chi tiết thanh toán</h3>
+              
+              {order.paymentDetails.transactionId && (
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-gray-500">Mã giao dịch:</span>
+                  <span>{order.paymentDetails.transactionId}</span>
+                </div>
+              )}
+              
+              {order.paymentDetails.paidAt && (
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-gray-500">Thời gian thanh toán:</span>
+                  <span>{formatDate(order.paymentDetails.paidAt)}</span>
+                </div>
+              )}
+              
+              {order.paymentDetails.method && (
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-gray-500">Phương thức:</span>
+                  <span>{order.paymentDetails.method}</span>
+                </div>
+              )}
+              
+              {order.paymentDetails.bankId && (
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-gray-500">Ngân hàng:</span>
+                  <span>{order.paymentDetails.bankId}</span>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {order.status === 'failed' && order.paymentDetails && order.paymentDetails.failedReason && (
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-gray-500">Lý do thất bại:</span>
+                <span className="text-red-600">{order.paymentDetails.failedReason}</span>
+              </div>
+              {order.paymentDetails.failedAt && (
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-gray-500">Thời gian:</span>
+                  <span>{formatDate(order.paymentDetails.failedAt)}</span>
+                </div>
+              )}
             </div>
           )}
         </div>

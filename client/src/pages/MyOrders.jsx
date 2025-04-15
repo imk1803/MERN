@@ -71,11 +71,11 @@ const MyOrders = () => {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
       case 'processing':
-        return 'bg-blue-100 text-blue-800';
-      case 'shipped':
-        return 'bg-purple-100 text-purple-800';
-      case 'delivered':
-        return 'bg-green-100 text-green-800';
+        return 'bg-indigo-100 text-indigo-800';
+      case 'paid':
+        return 'bg-emerald-100 text-emerald-800';
+      case 'failed':
+        return 'bg-orange-100 text-orange-800';
       case 'cancelled':
         return 'bg-red-100 text-red-800';
       default:
@@ -86,13 +86,13 @@ const MyOrders = () => {
   const getStatusText = (status) => {
     switch (status) {
       case 'pending':
-        return 'Chờ xử lý';
+        return 'Chờ xác nhận';
       case 'processing':
         return 'Đang xử lý';
-      case 'shipped':
-        return 'Đang giao hàng';
-      case 'delivered':
-        return 'Đã giao hàng';
+      case 'paid':
+        return 'Đã thanh toán';
+      case 'failed':
+        return 'Thanh toán thất bại';
       case 'cancelled':
         return 'Đã hủy';
       default:

@@ -220,10 +220,6 @@ const Checkout = () => {
           setProcessingPayment(false);
           return; // Dừng xử lý tiếp theo
         }
-      } else if (selectedPaymentMethod === 'cod') {
-        // Thanh toán khi nhận hàng
-        toast.success('Đặt hàng thành công!');
-        navigate('/payment/success');
       }
       
       // Xóa giỏ hàng sau khi đặt hàng thành công

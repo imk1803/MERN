@@ -68,14 +68,10 @@ const OrderDetail = () => {
 
   const getStatusClass = (status) => {
     switch (status) {
-      case 'delivered':
-        return 'bg-green-100 text-green-800';
-      case 'shipped':
-        return 'bg-blue-100 text-blue-800';
-      case 'processing':
-        return 'bg-indigo-100 text-indigo-800';
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
+      case 'processing':
+        return 'bg-indigo-100 text-indigo-800';
       case 'paid':
         return 'bg-emerald-100 text-emerald-800';
       case 'failed':
@@ -89,14 +85,10 @@ const OrderDetail = () => {
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'delivered':
-        return 'Đã giao hàng';
-      case 'shipped':
-        return 'Đang giao hàng';
-      case 'processing':
-        return 'Đang xử lý';
       case 'pending':
         return 'Chờ xác nhận';
+      case 'processing':
+        return 'Đang xử lý';
       case 'paid':
         return 'Đã thanh toán';
       case 'failed':
@@ -104,7 +96,7 @@ const OrderDetail = () => {
       case 'cancelled':
         return 'Đã hủy';
       default:
-        return 'Không xác định';
+        return status;
     }
   };
 
@@ -269,30 +261,6 @@ const OrderDetail = () => {
                       }`}
                     >
                       Đang xử lý
-                    </button>
-                    
-                    <button 
-                      onClick={() => handleStatusUpdate('shipped')}
-                      disabled={statusLoading || order.status === 'shipped'}
-                      className={`px-3 py-2 rounded-md text-sm ${
-                        order.status === 'shipped' 
-                          ? 'bg-blue-100 text-blue-800' 
-                          : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                      }`}
-                    >
-                      Đang giao hàng
-                    </button>
-                    
-                    <button 
-                      onClick={() => handleStatusUpdate('delivered')}
-                      disabled={statusLoading || order.status === 'delivered'}
-                      className={`px-3 py-2 rounded-md text-sm ${
-                        order.status === 'delivered' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                      }`}
-                    >
-                      Đã giao hàng
                     </button>
                     
                     <button 

@@ -69,12 +69,6 @@ router.get('/methods', (req, res) => {
       logo: 'https://cdn-icons-png.flaticon.com/512/2830/2830284.png',
       description: 'Thanh toán bằng chuyển khoản ngân hàng',
       banks: SUPPORTED_BANKS
-    },
-    {
-      id: 'cod',
-      name: 'Thanh toán khi nhận hàng',
-      logo: 'https://cdn-icons-png.flaticon.com/512/1554/1554401.png',
-      description: 'Thanh toán khi nhận được sản phẩm'
     }
   ];
   

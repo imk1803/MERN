@@ -225,10 +225,6 @@ const Orders = () => {
 
   const getStatusClass = (status) => {
     switch (status) {
-      case 'delivered':
-        return 'bg-green-100 text-green-800';
-      case 'shipped':
-        return 'bg-blue-100 text-blue-800';
       case 'processing':
         return 'bg-indigo-100 text-indigo-800';
       case 'pending':
@@ -246,10 +242,6 @@ const Orders = () => {
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'delivered':
-        return 'Đã giao hàng';
-      case 'shipped':
-        return 'Đang giao hàng';
       case 'processing':
         return 'Đang xử lý';
       case 'pending':
@@ -333,8 +325,6 @@ const Orders = () => {
                     <option value="">Tất cả trạng thái</option>
                     <option value="pending">Chờ xác nhận</option>
                     <option value="processing">Đang xử lý</option>
-                    <option value="shipped">Đang giao hàng</option>
-                    <option value="delivered">Đã giao hàng</option>
                     <option value="paid">Đã thanh toán</option>
                     <option value="failed">Thanh toán thất bại</option>
                     <option value="cancelled">Đã hủy</option>

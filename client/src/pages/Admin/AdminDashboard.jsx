@@ -570,8 +570,6 @@ const AdminDashboard = () => {
       // Đếm số lượng đơn hàng theo trạng thái
       const statusCounts = {};
       const statusColors = {
-        'delivered': '#10B981', // green
-        'shipped': '#3B82F6',   // blue
         'processing': '#6366F1', // indigo
         'pending': '#F59E0B',   // yellow
         'paid': '#059669',      // emerald
@@ -582,8 +580,6 @@ const AdminDashboard = () => {
 
       // Tên hiển thị tiếng Việt cho từng trạng thái
       const statusLabels = {
-        'delivered': 'Đã giao hàng',
-        'shipped': 'Đang giao hàng',
         'processing': 'Đang xử lý',
         'pending': 'Chờ xác nhận',
         'paid': 'Đã thanh toán',
