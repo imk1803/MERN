@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { getUsers, deleteUser } from '../../services/adminUserService';
 import Spinner from '../../components/Spinner';
 import Pagination from '../../components/Pagination';
 import { useNotification } from '../../contexts/NotificationContext';
-import { formatDate } from '../../utils/formatters';
 import AdminSidebar from '../../components/AdminSidebar';
 
 const UserRoleBadge = ({ role }) => {
@@ -26,10 +25,12 @@ const UserRoleBadge = ({ role }) => {
 
 const Users = () => {
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deletingUser, setDeletingUser] = useState(null);
+  const searchInputRef = useRef(null);
   
   // Pagination state
   const [page, setPage] = useState(1);
@@ -39,14 +40,18 @@ const Users = () => {
   // Filter state
   const [search, setSearch] = useState('');
   const [role, setRole] = useState('');
-  const [sortBy, setSortBy] = useState('createdAt');
-  const [sortOrder, setSortOrder] = useState('desc');
+  const [sortBy, setSortBy] = useState('username');
+  const [sortOrder, setSortOrder] = useState('asc');
   
   const { showNotification } = useNotification();
   
   const fetchUsers = useCallback(async () => {
     try {
-      setLoading(true);
+      if (initialLoading) {
+        setInitialLoading(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
       
       const result = await getUsers({
@@ -68,18 +73,20 @@ const Users = () => {
       setError('Đã xảy ra lỗi khi tải danh sách người dùng');
       console.error('Error fetching users:', err);
     } finally {
+      setInitialLoading(false);
       setLoading(false);
     }
-  }, [search, role, page, limit, sortBy, sortOrder]);
+  }, [search, role, page, limit, sortBy, sortOrder, initialLoading]);
   
+  // Gọi API khi tham số tìm kiếm hoặc lọc thay đổi
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+  }, [search, role, sortBy, sortOrder, page, fetchUsers]);
   
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearch(value);
     setPage(1); // Reset về trang 1 khi tìm kiếm
-    fetchUsers();
   };
   
   const handleRoleChange = (e) => {
@@ -89,25 +96,15 @@ const Users = () => {
   
   const handleSortChange = (e) => {
     const value = e.target.value;
-    let newSortBy = 'createdAt';
-    let newSortOrder = 'desc';
     
     if (value === 'username-asc') {
-      newSortBy = 'username';
-      newSortOrder = 'asc';
+      setSortBy('username');
+      setSortOrder('asc');
     } else if (value === 'username-desc') {
-      newSortBy = 'username';
-      newSortOrder = 'desc';
-    } else if (value === 'createdAt-asc') {
-      newSortBy = 'createdAt';
-      newSortOrder = 'asc';
-    } else if (value === 'createdAt-desc') {
-      newSortBy = 'createdAt';
-      newSortOrder = 'desc';
+      setSortBy('username');
+      setSortOrder('desc');
     }
     
-    setSortBy(newSortBy);
-    setSortOrder(newSortOrder);
     setPage(1); // Reset về trang 1 khi thay đổi sắp xếp
   };
   
@@ -146,7 +143,7 @@ const Users = () => {
     setConfirmDelete(null);
   };
   
-  if (loading && page === 1) {
+  if (initialLoading) {
     return <Spinner />;
   }
   
@@ -175,21 +172,19 @@ const Users = () => {
         <div className="mb-6 bg-white rounded-lg shadow-md p-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
-              <form onSubmit={handleSearchSubmit} className="flex">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <i className="fas fa-search text-gray-400"></i>
+                </div>
                 <input
+                  ref={searchInputRef}
                   type="text"
                   placeholder="Tìm kiếm người dùng..."
-                  className="w-full px-4 py-2 border rounded-l focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full pl-10 pr-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={handleSearchChange}
                 />
-                <button 
-                  type="submit" 
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-r hover:bg-indigo-700"
-                >
-                  Tìm
-                </button>
-              </form>
+              </div>
             </div>
             
             <div className="md:w-1/4">
@@ -212,8 +207,6 @@ const Users = () => {
               >
                 <option value="username-asc">Tên tài khoản (A-Z)</option>
                 <option value="username-desc">Tên tài khoản (Z-A)</option>
-                <option value="createdAt-desc">Mới nhất trước</option>
-                <option value="createdAt-asc">Cũ nhất trước</option>
               </select>
             </div>
           </div>
@@ -221,9 +214,12 @@ const Users = () => {
         
         {/* User Table */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          {loading && page > 1 ? (
-            <div className="p-4 text-center">
-              <Spinner />
+          {loading ? (
+            <div className="p-4">
+              <div className="flex items-center justify-center py-4">
+                <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                <span className="ml-2 text-sm text-gray-500">Đang tải...</span>
+              </div>
             </div>
           ) : users.length > 0 ? (
             <div className="overflow-x-auto">
@@ -235,9 +231,6 @@ const Users = () => {
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Vai trò
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Ngày tạo
                     </th>
                     <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Thao tác
@@ -252,9 +245,6 @@ const Users = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <UserRoleBadge role={user.role} />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(user.createdAt)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <Link 
