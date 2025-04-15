@@ -5,6 +5,35 @@ import { verifyPayment } from '../services/paymentService';
 import { clearCart } from '../services/cartService';
 import { toast } from 'react-hot-toast';
 
+// Component modal xác nhận hủy thanh toán
+const CancelConfirmModal = ({ isOpen, onClose, onConfirm }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+        <h3 className="text-lg font-bold text-gray-900 mb-2">Xác nhận hủy thanh toán</h3>
+        <p className="text-gray-700 mb-4">Bạn có chắc chắn muốn hủy thanh toán này? Hành động này không thể hoàn tác.</p>
+        
+        <div className="flex justify-end space-x-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300"
+          >
+            Không, giữ lại
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+          >
+            Có, hủy thanh toán
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const PaymentResult = () => {
   const [status, setStatus] = useState('loading'); // loading, success, error
   const [message, setMessage] = useState('');
@@ -12,6 +41,9 @@ const PaymentResult = () => {
   const [searchParams] = useSearchParams();
   const { type } = useParams();
   const navigate = useNavigate();
+  
+  // State cho modal hủy thanh toán
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   useEffect(() => {
     const verifyPaymentStatus = async () => {
@@ -218,7 +250,7 @@ const PaymentResult = () => {
             
             <div className="flex justify-between">
               <span className="font-medium">Chủ tài khoản:</span>
-              <span>CONG TY MERN</span>
+              <span>CONG TY CurvoTech</span>
             </div>
             
             <div className="flex justify-between">
@@ -326,30 +358,7 @@ const PaymentResult = () => {
         {status === 'pending' && (
           <div className="flex justify-center mt-4">
             <button 
-              onClick={async () => {
-                if (window.confirm('Bạn có chắc muốn hủy thanh toán này?')) {
-                  try {
-                    const orderId = window.location.pathname.split('/').pop();
-                    // Gọi API để cập nhật trạng thái đơn hàng thành 'failed'
-                    const response = await axios.post(
-                      `http://localhost:5000/api/payment/update-status/${orderId}`,
-                      { 
-                        status: 'failed',
-                        reason: 'Thanh toán bị hủy bởi người dùng'
-                      }
-                    );
-                    
-                    console.log('Cancel payment response:', response.data);
-                    if (response.data.success) {
-                      // Chuyển đến trang thất bại thanh toán
-                      navigate('/payment/failed/' + orderId);
-                    }
-                  } catch (error) {
-                    console.error('Error cancelling payment:', error);
-                    toast.error('Có lỗi xảy ra khi hủy thanh toán');
-                  }
-                }
-              }}
+              onClick={() => setShowCancelModal(true)}
               className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
             >
               Hủy thanh toán
@@ -357,6 +366,38 @@ const PaymentResult = () => {
           </div>
         )}
       </div>
+      
+      {/* Modal xác nhận hủy thanh toán */}
+      <CancelConfirmModal 
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={async () => {
+          try {
+            const orderId = window.location.pathname.split('/').pop();
+            // Gọi API để cập nhật trạng thái đơn hàng thành 'failed'
+            const response = await axios.post(
+              `http://localhost:5000/api/payment/update-status/${orderId}`,
+              { 
+                status: 'failed',
+                reason: 'Thanh toán bị hủy bởi người dùng'
+              }
+            );
+            
+            console.log('Cancel payment response:', response.data);
+            if (response.data.success) {
+              // Đóng modal
+              setShowCancelModal(false);
+              // Chuyển đến trang thất bại thanh toán
+              navigate('/payment/failed/' + orderId);
+            }
+          } catch (error) {
+            console.error('Error cancelling payment:', error);
+            toast.error('Có lỗi xảy ra khi hủy thanh toán');
+            // Đóng modal
+            setShowCancelModal(false);
+          }
+        }}
+      />
     </div>
   );
 };

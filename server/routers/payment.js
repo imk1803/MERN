@@ -234,8 +234,8 @@ router.post('/banking/create', async (req, res) => {
     // Tạo thông tin thanh toán
     const accountDetails = {
       bankId: bankId,
-      accountNumber: '0123456789', // Số tài khoản doanh nghiệp (thay bằng số thật)
-      accountName: 'CONG TY MERN', // Tên tài khoản (thay bằng tên thật)
+      accountNumber: '0123456789', // 
+      accountName: 'CONG TY CurvoTech', // 
       amount: amount,
       content: `Thanh toan ${orderId}` // Nội dung chuyển khoản
     };
