@@ -4,7 +4,6 @@ import { getProducts, deleteProduct } from '../../services/adminProductService';
 import { getCategories } from '../../services/adminCategoryService';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import AdminLayout from '../../components/AdminLayout';
-import Pagination from '../../components/Pagination';
 
 // Delete Confirmation Modal component
 const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, productName }) => {
@@ -52,6 +51,7 @@ const Products = () => {
     page: 1,
     limit: 10,
     total: 0,
+    totalItems: 0,
     totalPages: 0
   });
   const [filters, setFilters] = useState({
@@ -109,7 +109,8 @@ const Products = () => {
         setPagination(prev => ({
           ...prev,
           totalPages: response.pagination.totalPages,
-          total: response.pagination.total
+          total: response.pagination.total,
+          totalItems: response.pagination.total
         }));
       } else {
         setError(response.message || 'Có lỗi xảy ra khi tải dữ liệu');
@@ -203,75 +204,86 @@ const Products = () => {
 
   return (
     <AdminLayout>
-      {/* Header and Search */}
       <div className="mb-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">Quản lý Sản phẩm</h1>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <h1 className="text-2xl font-bold text-gray-800">Quản lý sản phẩm</h1>
           <Link 
             to="/admin/products/add" 
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md flex items-center"
+            className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center"
           >
             <i className="bi bi-plus-lg mr-2"></i>
             Thêm sản phẩm
           </Link>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="md:col-span-2">
-            <form onSubmit={handleSearchSubmit} className="flex">
-              <input
-                type="text"
-                className="w-full p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Tìm kiếm tên sản phẩm..."
-                name="search"
-                value={filters.search}
-                onChange={handleFilterChange}
-              />
-              <button 
-                type="submit" 
-                className="bg-indigo-600 text-white px-4 rounded-r-md hover:bg-indigo-700"
-              >
-                <i className="bi bi-search"></i>
-              </button>
-            </form>
-          </div>
-          <div className="flex space-x-4">
-            <div className="w-1/2 relative">
-              <select
-                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none pr-8"
-                name="category"
-                value={filters.category}
-                onChange={handleFilterChange}
-              >
-                <option value="">Tất cả danh mục sản phẩm</option>
-                {categories.map((category) => (
-                  <option key={category._id || category} value={category._id || category}>
-                    {category.name || category}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                <i className="bi bi-chevron-down text-gray-400"></i>
+        {/* Filters */}
+        <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
+          <form onSubmit={handleSearchSubmit}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="md:col-span-1">
+                <label htmlFor="search" className="block text-xs font-medium text-gray-500 mb-1">
+                  Tìm kiếm
+                </label>
+                <div className="flex">
+                  <input
+                    type="text"
+                    id="search"
+                    name="search"
+                    value={filters.search}
+                    onChange={handleFilterChange}
+                    placeholder="Tìm kiếm sản phẩm..."
+                    className="w-full p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                  />
+                  <button 
+                    type="submit"
+                    className="bg-indigo-600 text-white px-4 py-2 rounded-r-md hover:bg-indigo-700 flex items-center justify-center"
+                  >
+                    <i className="bi bi-search"></i>
+                  </button>
+                </div>
+              </div>
+              
+              <div>
+                <label htmlFor="category" className="block text-xs font-medium text-gray-500 mb-1">
+                  Danh mục
+                </label>
+                <select
+                  id="category"
+                  name="category"
+                  value={filters.category}
+                  onChange={handleFilterChange}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                >
+                  <option value="">Tất cả danh mục</option>
+                  {categories.map(category => (
+                    <option key={category._id} value={category._id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label htmlFor="sort" className="block text-xs font-medium text-gray-500 mb-1">
+                  Sắp xếp
+                </label>
+                <select
+                  id="sort"
+                  name="sort"
+                  value={filters.sort}
+                  onChange={handleFilterChange}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                >
+                  <option value="newest">Mới nhất</option>
+                  <option value="oldest">Cũ nhất</option>
+                  <option value="price_low">Giá thấp đến cao</option>
+                  <option value="price_high">Giá cao đến thấp</option>
+                  <option value="name_asc">Tên A-Z</option>
+                  <option value="name_desc">Tên Z-A</option>
+                </select>
               </div>
             </div>
-            <div className="w-1/2 relative">
-              <select
-                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none pr-8"
-                name="sort"
-                value={filters.sort}
-                onChange={handleFilterChange}
-              >
-                <option value="newest">Mới nhất</option>
-                <option value="price_asc">Giá tăng dần</option>
-                <option value="price_desc">Giá giảm dần</option>
-                <option value="name_asc">Tên A-Z</option>
-                <option value="name_desc">Tên Z-A</option>
-              </select>
-              <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                <i className="bi bi-chevron-down text-gray-400"></i>
-              </div>
-            </div>
-          </div>
+          </form>
         </div>
       </div>
       
@@ -385,13 +397,59 @@ const Products = () => {
           </div>
           
           {/* Pagination */}
-          <div className="px-6 py-4 border-t border-gray-100 flex justify-center">
-            <Pagination 
-              currentPage={pagination.page} 
-              totalPages={pagination.totalPages} 
-              onPageChange={handlePageChange} 
-            />
-          </div>
+          {pagination.totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-gray-200">
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-gray-500">
+                  Hiển thị <span className="font-medium">{products.length ? (pagination.page - 1) * pagination.limit + 1 : 0}</span> đến <span className="font-medium">
+                    {products.length ? Math.min(pagination.page * pagination.limit, pagination.totalItems || 0) : 0}
+                  </span> trong <span className="font-medium">{pagination.totalItems || 0}</span> sản phẩm
+                </div>
+                <div className="flex space-x-1">
+                  <button
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={pagination.page === 1}
+                    className={`px-3 py-1 rounded-md ${
+                      pagination.page === 1
+                        ? 'text-gray-400 cursor-not-allowed'
+                        : 'text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <i className="bi bi-chevron-left"></i>
+                  </button>
+                  
+                  {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                    const pageNumber = i + 1 + Math.max(0, Math.min(pagination.totalPages - 5, pagination.page - 3));
+                    return (
+                      <button
+                        key={pageNumber}
+                        onClick={() => handlePageChange(pageNumber)}
+                        className={`px-3 py-1 rounded-md ${
+                          pagination.page === pageNumber
+                            ? 'bg-indigo-600 text-white'
+                            : 'text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {pageNumber}
+                      </button>
+                    );
+                  })}
+                  
+                  <button
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={pagination.page === pagination.totalPages}
+                    className={`px-3 py-1 rounded-md ${
+                      pagination.page === pagination.totalPages
+                        ? 'text-gray-400 cursor-not-allowed'
+                        : 'text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <i className="bi bi-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow-sm p-6 text-center">

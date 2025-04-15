@@ -15,7 +15,7 @@ const AdminLayout = ({ children }) => {
         onToggleMobileSidebar={toggleMobileSidebar}
       />
       
-      <div className="flex-1 flex flex-col overflow-hidden md:ml-20 lg:ml-64 transition-all duration-300">
+      <div className="flex-1 flex flex-col overflow-hidden md:ml-16 lg:ml-56 transition-all duration-300">
         {/* Admin Mobile Header */}
         <div className="bg-white shadow-sm md:hidden">
           <div className="flex items-center justify-between p-4">
@@ -31,8 +31,10 @@ const AdminLayout = ({ children }) => {
         </div>
         
         {/* Admin Content */}
-        <div className="flex-1 overflow-auto p-4 md:p-8">
-          {children}
+        <div className="flex-1 overflow-auto p-4 md:p-6">
+          <div className="max-w-6xl mx-auto">
+            {children}
+          </div>
         </div>
       </div>
     </div>

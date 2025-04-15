@@ -686,13 +686,13 @@ const AdminDashboard = () => {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6">
             {statsCards.map((card, index) => (
               <StatsCard key={index} {...card} />
             ))}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6">
             <SalesChart chartRef={chartRef} />
             <StatusChart chartRef={statusChartRef} />
           </div>

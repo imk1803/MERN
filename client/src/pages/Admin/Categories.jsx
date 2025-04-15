@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getCategories, deleteCategory } from '../../services/adminCategoryService';
 import 'bootstrap-icons/font/bootstrap-icons.css';
-import AdminSidebar from '../../components/AdminSidebar';
+import AdminLayout from '../../components/AdminLayout';
 
 // Simple CategoryList component to display categories without hierarchy
 const CategoryList = ({ categories, onEdit, onDelete }) => {
@@ -186,69 +186,51 @@ const Categories = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <AdminSidebar />
-      
-      <div className="flex-1 p-8 overflow-auto">
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-800">Quản lý Danh mục</h1>
-            <Link 
-              to="/admin/categories/add" 
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md flex items-center"
-            >
-              <i className="bi bi-plus-lg mr-2"></i>
-              Thêm Danh mục
-            </Link>
-          </div>
+    <AdminLayout>
+      <div className="mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <h1 className="text-2xl font-bold text-gray-800">Quản lý Danh mục</h1>
+          <Link 
+            to="/admin/categories/add" 
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md flex items-center"
+          >
+            <i className="bi bi-plus-lg mr-2"></i>
+            Thêm danh mục
+          </Link>
         </div>
         
-        {/* Error Message */}
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            <i className="bi bi-exclamation-triangle-fill mr-2"></i>
-            {error}
+            <p>{error}</p>
           </div>
         )}
-
-        {/* Loading State */}
+        
         {loading ? (
-          <div className="flex flex-col items-center justify-center min-h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-            <p className="mt-4">Đang tải danh mục...</p>
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
           </div>
-        ) : categories.length > 0 ? (
-          
-            
-            <CategoryList 
-              categories={categories} 
-              onEdit={handleEditCategory} 
-              onDelete={handleDeleteCategory}
-            />
-          
+        ) : categories.length === 0 ? (
+          <div className="bg-white p-8 rounded-lg shadow-md text-center">
+            <i className="bi bi-folder text-5xl text-gray-300 mb-3"></i>
+            <p className="text-gray-500">Không có danh mục nào. Hãy thêm danh mục mới!</p>
+          </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm p-6 text-center">
-            <i className="bi bi-tags text-4xl text-gray-400 mb-3 block"></i>
-            <p className="text-gray-500">Không tìm thấy danh mục nào. Hãy thêm danh mục đầu tiên của bạn!</p>
-            <Link
-              to="/admin/categories/add"
-              className="inline-block mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
-            >
-              <i className="bi bi-plus-lg mr-2"></i>
-              Thêm Danh mục
-            </Link>
-          </div>
+          <CategoryList 
+            categories={categories}
+            onEdit={handleEditCategory}
+            onDelete={handleDeleteCategory}
+          />
         )}
       </div>
       
       {/* Delete Confirmation Modal */}
-      <DeleteConfirmationModal 
+      <DeleteConfirmationModal
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, categoryId: null, categoryName: '' })}
         onConfirm={confirmDelete}
         categoryName={deleteModal.categoryName}
       />
-    </div>
+    </AdminLayout>
   );
 };
 

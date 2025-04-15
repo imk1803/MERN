@@ -155,7 +155,7 @@ const Users = () => {
   
   return (
     <AdminLayout>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Quản lý người dùng</h1>
         <Link 
           to="/admin/users/add" 
@@ -174,7 +174,7 @@ const Users = () => {
       
       {/* Filter and Search */}
       <div className="mb-6 bg-white rounded-lg shadow-md p-4">
-        <div className="flex flex-col md:flex-row gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <div className="flex-1">
             <div className="flex">
               <input
@@ -193,7 +193,7 @@ const Users = () => {
             </div>
           </div>
           
-          <div className="md:w-1/4">
+          <div>
             <select
               className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
               value={role}
@@ -205,7 +205,7 @@ const Users = () => {
             </select>
           </div>
           
-          <div className="md:w-1/4">
+          <div>
             <select
               className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
               value={`${sortBy}-${sortOrder}`}

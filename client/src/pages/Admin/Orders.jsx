@@ -316,7 +316,7 @@ const Orders = () => {
         {/* Filters */}
         <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
           <form onSubmit={handleSearchSubmit}>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label htmlFor="search" className="block text-xs font-medium text-gray-500 mb-1">
                   Tìm kiếm

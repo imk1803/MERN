@@ -45,7 +45,7 @@ const AdminSidebar = ({ isMobileSidebarOpen, onToggleMobileSidebar }) => {
   };
 
   const sidebarClass = `bg-white shadow-lg transition-all duration-300 ${
-    isCollapsed ? 'w-20' : 'w-64'
+    isCollapsed ? 'w-16' : 'w-56'
   } ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} z-30 h-screen fixed md:sticky top-0 left-0`;
 
   return (
