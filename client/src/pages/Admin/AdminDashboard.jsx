@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { Chart, registerables } from 'chart.js';
-import AdminSidebar from '../../components/AdminSidebar';
+import AdminLayout from '../../components/AdminLayout';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 // Đăng ký các thành phần cần thiết cho Chart.js
@@ -672,39 +672,35 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <AdminSidebar />
-      
-      <div className="flex-1 p-8 overflow-auto">
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
+    <AdminLayout>
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+      )}
 
-        {loading ? (
-          <div className="flex flex-col items-center justify-center min-h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-            <p className="mt-4">Đang tải thông tin...</p>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center min-h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+          <p className="mt-4">Đang tải thông tin...</p>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+            {statsCards.map((card, index) => (
+              <StatsCard key={index} {...card} />
+            ))}
           </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-              {statsCards.map((card, index) => (
-                <StatsCard key={index} {...card} />
-              ))}
-            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              <SalesChart chartRef={chartRef} />
-              <StatusChart chartRef={statusChartRef} />
-            </div>
-            
-            <RecentOrders orders={stats.recentOrders} />
-          </>
-        )}
-      </div>
-    </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <SalesChart chartRef={chartRef} />
+            <StatusChart chartRef={statusChartRef} />
+          </div>
+          
+          <RecentOrders orders={stats.recentOrders} />
+        </>
+      )}
+    </AdminLayout>
   );
 };
 

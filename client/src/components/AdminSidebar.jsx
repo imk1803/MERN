@@ -1,9 +1,22 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
-const AdminSidebar = () => {
+const AdminSidebar = ({ isMobileSidebarOpen, onToggleMobileSidebar }) => {
   const location = useLocation();
+  const [isCollapsed, setIsCollapsed] = useState(window.innerWidth < 1024);
+  
+  useEffect(() => {
+    const handleResize = () => {
+      setIsCollapsed(window.innerWidth < 1024);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
   const menuItems = [
     { path: '/admin/dashboard', icon: 'bi bi-speedometer2', label: 'Dashboard' },
     { path: '/admin/products', icon: 'bi bi-box', label: 'Sản phẩm' },
@@ -27,36 +40,83 @@ const AdminSidebar = () => {
     return location.pathname.startsWith(path);
   };
 
+  const toggleCollapse = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
+  const sidebarClass = `bg-white shadow-lg transition-all duration-300 ${
+    isCollapsed ? 'w-20' : 'w-64'
+  } ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} z-30 h-screen fixed md:sticky top-0 left-0`;
+
   return (
-    <div className="w-64 bg-white shadow-lg">
-      <div className="p-6">
-        <img
-          src="https://i.pinimg.com/736x/43/5d/09/435d096b52b0be4816d214c05ab0c22e.jpg"
-          alt="Logo"
-          className="h-10 w-10 rounded-full mb-2"
-        />
-        <h1 className="text-2xl font-bold text-indigo-600">CurvoTech Admin</h1>
+    <>
+      {/* Overlay for mobile */}
+      {isMobileSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden" 
+          onClick={onToggleMobileSidebar}
+        ></div>
+      )}
+      
+      <div className={sidebarClass}>
+        <div className={`p-4 flex ${isCollapsed ? 'justify-center' : 'justify-between'} items-center border-b border-gray-200`}>
+          {!isCollapsed && (
+            <div className="flex items-center">
+              <img
+                src="https://i.pinimg.com/736x/43/5d/09/435d096b52b0be4816d214c05ab0c22e.jpg"
+                alt="Logo"
+                className="h-10 w-10 rounded-full mr-2"
+              />
+              <h1 className="text-xl font-bold text-indigo-600">CurvoTech</h1>
+            </div>
+          )}
+          {isCollapsed && (
+            <img
+              src="https://i.pinimg.com/736x/43/5d/09/435d096b52b0be4816d214c05ab0c22e.jpg"
+              alt="Logo"
+              className="h-10 w-10 rounded-full"
+            />
+          )}
+          <button 
+            className="text-gray-500 hover:text-indigo-600 md:block hidden"
+            onClick={toggleCollapse}
+          >
+            <i className={`bi ${isCollapsed ? 'bi-chevron-right' : 'bi-chevron-left'}`}></i>
+          </button>
+          <button 
+            className="text-gray-500 hover:text-indigo-600 md:hidden block"
+            onClick={onToggleMobileSidebar}
+          >
+            <i className="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <nav className="mt-4 overflow-y-auto" style={{ height: 'calc(100vh - 76px)' }}>
+          <ul>
+            {menuItems.map((item) => (
+              <li
+                key={item.path}
+                className={`px-3 py-3 ${
+                  isActive(item.path)
+                    ? 'bg-indigo-50 text-indigo-600 border-r-4 border-indigo-600'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <Link 
+                  to={item.path} 
+                  className={`flex ${isCollapsed ? 'justify-center' : 'items-center'} ${isCollapsed ? 'flex-col' : ''}`}
+                  onClick={window.innerWidth < 768 ? onToggleMobileSidebar : undefined}
+                >
+                  <i className={`${item.icon} ${isCollapsed ? 'text-xl mb-1' : 'mr-3'}`}></i>
+                  {(!isCollapsed || window.innerWidth < 768) && (
+                    <span className={`font-medium ${isCollapsed ? 'text-xs' : ''}`}>{item.label}</span>
+                  )}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </div>
-      <nav className="mt-4">
-        <ul>
-          {menuItems.map((item) => (
-            <li
-              key={item.path}
-              className={`px-6 py-3 ${
-                isActive(item.path)
-                  ? 'bg-indigo-50 text-indigo-600 border-r-4 border-indigo-600'
-                  : 'text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <Link to={item.path} className="flex items-center">
-                <i className={`${item.icon} mr-3`}></i>
-                <span className="font-medium">{item.label}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
-    </div>
+    </>
   );
 };
 

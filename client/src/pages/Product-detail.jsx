@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import handleAddToCart from '../services/cartService';
+import Spinner from '../components/Spinner';
 
 axios.defaults.withCredentials = true;
 axios.defaults.baseURL = 'http://localhost:5000';
@@ -23,12 +24,15 @@ const ProductDetail = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [categoryName, setCategoryName] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
+        setLoading(true);
         const res = await axios.get(`/api/products/${id}`);
         setProduct(res.data.product);
         
@@ -50,9 +54,11 @@ const ProductDetail = () => {
         } else {
           setCategoryName('Không xác định');
         }
+        setLoading(false);
       } catch (err) {
         console.error('Lỗi khi lấy chi tiết sản phẩm:', err);
-        showNotification('Không thể tải chi tiết sản phẩm!', 'error');
+        setError('Không thể tải chi tiết sản phẩm!');
+        setLoading(false);
       }
     };
     
@@ -83,9 +89,12 @@ const ProductDetail = () => {
     }, 3000);
   };
 
-  if (!product) {
-    return <div className="text-center p-4">Đang tải sản phẩm...</div>;
-  }
+  // Helper function to safely get image URL
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return "https://placehold.co/400x300?text=No+Image";
+    if (imageUrl.startsWith('http')) return imageUrl;
+    return `http://localhost:5000${imageUrl}`;
+  };
 
   return (
     <div className="bg-gray-100 min-h-screen">
@@ -104,65 +113,92 @@ const ProductDetail = () => {
         </div>
       )}
 
-      <header className="text-center p-4 bg-white shadow-md">
-        <h1 className="text-2xl font-bold">Chi tiết sản phẩm</h1>
-      </header>
+      <div className="container mx-auto px-4 py-6">
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          {loading ? (
+            <div className="flex justify-center items-center py-16">
+              <Spinner />
+            </div>
+          ) : error ? (
+            <div className="text-center py-16">
+              <p className="text-red-500 mb-4">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              >
+                Thử lại
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col md:flex-row">
+              <div className="md:w-1/2 p-4 flex items-center justify-center bg-gray-50">
+                <img
+                  src={getImageUrl(product.image)}
+                  alt={product.name}
+                  className="max-w-full h-auto max-h-80 object-contain rounded-lg"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "https://placehold.co/400x300?text=No+Image";
+                  }}
+                />
+              </div>
 
-      <div className="container mx-auto p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-6 rounded-lg shadow-md">
-          <div className="flex justify-center">
-            <img
-              src={product.image}
-              alt={product.name}
-              className="w-full h-80 object-cover rounded-lg"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "https://placehold.co/400x300?text=No+Image";
-              }}
-            />
-          </div>
+              <div className="md:w-1/2 p-6">
+                <h2 className="text-xl md:text-2xl font-bold mb-4">{product.name}</h2>
+                <div className="mb-4">
+                  <span className="text-gray-700 font-semibold">
+                    Giá:{" "}
+                    <span className="text-red-500 text-xl">
+                      {product.price ? product.price.toLocaleString('vi-VN') : 0} VNĐ
+                    </span>
+                  </span>
+                </div>
+                
+                <div className="space-y-3 mb-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center">
+                    <span className="font-semibold sm:w-24 mb-1 sm:mb-0">Danh mục:</span> 
+                    <span>{categoryName}</span>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center">
+                    <span className="font-semibold sm:w-24 mb-1 sm:mb-0">Đánh giá:</span> 
+                    <span className="flex items-center">
+                      {product.rating}/5 
+                      <span className="text-yellow-400 ml-1">⭐</span>
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="mb-6">
+                  <h3 className="font-semibold mb-2">Mô tả:</h3>
+                  <p className="text-gray-600">{product.description}</p>
+                </div>
 
-          <div className="flex flex-col justify-center">
-            <h2 className="text-2xl font-bold mb-2">{product.name}</h2>
-            <p className="text-lg text-gray-700 font-semibold">
-              Giá:{" "}
-              <span className="text-red-500">
-                {product.price ? product.price.toLocaleString('vi-VN') : 0} VNĐ
-              </span>
-            </p>
-            <p className="text-gray-600">
-              <strong>Danh mục:</strong> {categoryName}
-            </p>
-            <p className="text-gray-600">
-              <strong>Đánh giá:</strong> {product.rating}/5⭐
-            </p>
-            <p className="text-gray-600">
-              <strong>Mô tả:</strong> {product.description}
-            </p>
+                <button
+                  onClick={() => handleAddToCart(product._id, showNotification)}
+                  className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition flex items-center justify-center mb-4"
+                >
+                  <i className="fas fa-shopping-cart mr-2"></i> Thêm vào giỏ hàng
+                </button>
 
-            <button
-              onClick={() => handleAddToCart(product._id, showNotification)}
-              className="mt-4 w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition flex items-center justify-center"
-            >
-              <i className="fas fa-shopping-cart mr-2"></i> Thêm vào giỏ hàng
-            </button>
-
-            <button
-              onClick={() => navigate(-1)}
-              className="mt-4 text-center block text-blue-500 hover:underline"
-            >
-              ← Quay lại
-            </button>
-          </div>
+                <button
+                  onClick={() => navigate(-1)}
+                  className="w-full text-center py-2 text-blue-500 hover:underline flex items-center justify-center"
+                >
+                  <i className="fas fa-arrow-left mr-2"></i> Quay lại
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      <a
-        href="/cart"
+      <Link
+        to="/cart"
         className="fixed bottom-4 right-4 bg-blue-500 text-white px-4 py-2 rounded-full shadow-lg flex items-center"
       >
-        🛒 Giỏ hàng
-      </a>
+        <i className="fas fa-shopping-cart mr-2"></i>
+        <span className="hidden sm:inline">Giỏ hàng</span>
+      </Link>
     </div>
   );
 };
