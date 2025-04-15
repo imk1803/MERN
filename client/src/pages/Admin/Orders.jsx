@@ -52,6 +52,7 @@ const Orders = () => {
     page: 1,
     limit: 10,
     total: 0,
+    totalItems: 0,
     totalPages: 0
   });
   const [filters, setFilters] = useState({
@@ -101,7 +102,8 @@ const Orders = () => {
         setPagination(prev => ({
           ...prev,
           totalPages: response.pagination.totalPages,
-          total: response.pagination.total
+          total: response.pagination.total,
+          totalItems: response.pagination.total
         }));
       } else {
         setError(response.message || 'Có lỗi xảy ra khi tải danh sách đơn hàng');
@@ -503,9 +505,9 @@ const Orders = () => {
             <div className="px-6 py-4 border-t border-gray-200">
               <div className="flex justify-between items-center">
                 <div className="text-sm text-gray-500">
-                  Hiển thị <span className="font-medium">{(pagination.page - 1) * pagination.limit + 1}</span> đến <span className="font-medium">
-                    {Math.min(pagination.page * pagination.limit, pagination.totalItems)}
-                  </span> trong <span className="font-medium">{pagination.totalItems}</span> đơn hàng
+                  Hiển thị <span className="font-medium">{orders.length ? (pagination.page - 1) * pagination.limit + 1 : 0}</span> đến <span className="font-medium">
+                    {orders.length ? Math.min(pagination.page * pagination.limit, pagination.totalItems || 0) : 0}
+                  </span> trong <span className="font-medium">{pagination.totalItems || 0}</span> đơn hàng
                 </div>
                 <div className="flex space-x-1">
                   <button
