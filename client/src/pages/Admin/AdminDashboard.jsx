@@ -54,8 +54,87 @@ const StatusChart = ({ chartRef }) => (
   </div>
 );
 
+// Modal component cho danh sách sản phẩm
+const ProductsModal = ({ isOpen, onClose, order }) => {
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-auto">
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <h3 className="text-lg font-medium text-gray-900">
+            Chi tiết sản phẩm - Đơn hàng #{order?._id?.toString().slice(-8) || 'N/A'}
+          </h3>
+          <button 
+            className="text-gray-400 hover:text-gray-500 focus:outline-none"
+            onClick={onClose}
+          >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <div className="px-6 py-4 max-h-[60vh] overflow-y-auto">
+          {order?.products?.map((product, index) => (
+            <div key={index} className="flex items-center py-3 border-b border-gray-100 last:border-b-0">
+              <div className="h-16 w-16 flex-shrink-0">
+                <img 
+                  alt={product?.name || "Sản phẩm"}
+                  className="h-16 w-16 rounded-md object-cover border border-gray-200"
+                  src={product?.image || "https://placehold.co/60x60"}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "https://placehold.co/60x60";
+                  }}
+                />
+              </div>
+              <div className="ml-4 flex-1">
+                <div className="font-medium text-gray-900">{product?.name || "Sản phẩm không xác định"}</div>
+                <div className="mt-1 flex justify-between items-center">
+                  <div className="text-sm text-gray-600">
+                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product?.price || 0)}
+                  </div>
+                  <div className="bg-indigo-50 text-indigo-700 py-1 px-2 rounded-full text-xs font-medium">
+                    SL: {product?.quantity || 1}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        <div className="px-6 py-4 bg-gray-50 rounded-b-lg">
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-sm text-gray-600">Tổng số sản phẩm:</span>
+              <span className="ml-2 font-medium">{order?.products?.length || 0}</span>
+            </div>
+            <div>
+              <span className="text-sm text-gray-600">Tổng tiền:</span>
+              <span className="ml-2 font-medium text-indigo-600">
+                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order?.totalAmount || 0)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const RecentOrders = ({ orders = [] }) => {
-  console.log('Recent orders received:', orders);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openModal = (order) => {
+    setSelectedOrder(order);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
 
   return (
     <div className="bg-white rounded-xl shadow-sm">
@@ -84,42 +163,53 @@ const RecentOrders = ({ orders = [] }) => {
           <tbody className="divide-y divide-gray-100">
             {Array.isArray(orders) && orders.length > 0 ? (
               orders.map((order) => {
-                // Lấy sản phẩm đầu tiên từ mảng products
-                const firstProduct = order?.products?.[0] || {};
-                
                 return (
                   <tr key={order?._id || 'unknown'} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       #{order?._id?.toString().slice(-8) || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="h-10 w-10 flex-shrink-0">
-                          <img 
-                            alt={firstProduct?.name || "Sản phẩm"} 
-                            className="h-10 w-10 rounded-full object-cover"
-                            src={firstProduct?.image || "https://placehold.co/40x40"}
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = "https://placehold.co/40x40";
-                            }}
-                          />
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {firstProduct?.name || "Sản phẩm không xác định"}
+                      {order?.products && order.products.length > 0 ? (
+                        <div onClick={() => openModal(order)} className="cursor-pointer">
+                          <div className="flex items-center">
+                            <div className="flex -space-x-2 overflow-hidden">
+                              {order.products.slice(0, 3).map((product, index) => (
+                                <div key={index} className="h-10 w-10 flex-shrink-0">
+                                  <img 
+                                    alt={product?.name || "Sản phẩm"} 
+                                    className="h-10 w-10 rounded-full object-cover ring-2 ring-white"
+                                    src={product?.image || "https://placehold.co/40x40"}
+                                    onError={(e) => {
+                                      e.target.onerror = null;
+                                      e.target.src = "https://placehold.co/40x40";
+                                    }}
+                                  />
+                                </div>
+                              ))}
+                              {order.products.length > 3 && (
+                                <div className="h-10 w-10 flex-shrink-0 flex items-center justify-center bg-gray-200 rounded-full ring-2 ring-white">
+                                  <span className="text-xs font-medium">+{order.products.length - 3}</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="ml-3">
+                              <div className="text-sm font-medium text-gray-900">
+                                {order.products[0]?.name || "Sản phẩm không xác định"}
+                              </div>
+                              {order.products.length > 1 && (
+                                <div className="text-xs text-indigo-600">
+                                  <span className="underline">Xem tất cả {order.products.length} sản phẩm</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {new Intl.NumberFormat('vi-VN', { 
-                              style: 'currency', 
-                              currency: 'VND' 
-                            }).format(firstProduct?.price || 0)}
-                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="text-sm text-gray-500">Không có sản phẩm</div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {firstProduct?.quantity || 1}
+                      {order?.products?.reduce((total, product) => total + (product?.quantity || 1), 0) || 0}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{order?.name || 'Khách hàng'}</div>
@@ -183,6 +273,13 @@ const RecentOrders = ({ orders = [] }) => {
           </tbody>
         </table>
       </div>
+      
+      {/* Modal hiển thị danh sách sản phẩm */}
+      <ProductsModal 
+        isOpen={isModalOpen} 
+        onClose={closeModal} 
+        order={selectedOrder}
+      />
     </div>
   );
 };
