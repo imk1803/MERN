@@ -5,6 +5,7 @@ import Spinner from '../../components/Spinner';
 import Pagination from '../../components/Pagination';
 import { useNotification } from '../../contexts/NotificationContext';
 import AdminSidebar from '../../components/AdminSidebar';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
 const UserRoleBadge = ({ role }) => {
   let bgColor = 'bg-gray-100 text-gray-800';
@@ -172,24 +173,26 @@ const Users = () => {
         <div className="mb-6 bg-white rounded-lg shadow-md p-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <i className="fas fa-search text-gray-400"></i>
-                </div>
+              <div className="flex">
                 <input
                   ref={searchInputRef}
                   type="text"
-                  placeholder="Tìm kiếm người dùng..."
-                  className="w-full pl-10 pr-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Tìm kiếm tên người dùng..."
+                  className="w-full px-4 py-2 border rounded-l-md focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                   value={search}
                   onChange={handleSearchChange}
                 />
+                <button 
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-r-md hover:bg-indigo-700 flex items-center justify-center"
+                >
+                  <i className="bi bi-search"></i>
+                </button>
               </div>
             </div>
             
             <div className="md:w-1/4">
               <select
-                className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                 value={role}
                 onChange={handleRoleChange}
               >

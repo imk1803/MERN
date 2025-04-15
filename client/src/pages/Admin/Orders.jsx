@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { getOrders, deleteOrder } from '../../services/adminOrderService';
 import 'bootstrap-icons/font/bootstrap-icons.css';
@@ -45,6 +45,7 @@ const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, orderId }) => {
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -65,9 +66,16 @@ const Orders = () => {
     orderId: null
   });
   
+  // Ref để giữ focus ở ô tìm kiếm
+  const searchInputRef = useRef(null);
+  
   const fetchOrders = useCallback(async () => {
     try {
-      setLoading(true);
+      if (initialLoading) {
+        setInitialLoading(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
       
       // Lấy giá trị từ state filters
@@ -101,13 +109,24 @@ const Orders = () => {
       console.error('Lỗi khi lấy danh sách đơn hàng:', err);
       setError('Không thể kết nối đến máy chủ');
     } finally {
+      setInitialLoading(false);
       setLoading(false);
     }
-  }, [filters, pagination.page, pagination.limit]);
+  }, [filters, pagination.page, pagination.limit, initialLoading]);
 
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
+
+  // Xử lý thay đổi bộ lọc tự động gọi API (trừ search)
+  useEffect(() => {
+    if (filters.status || filters.dateFrom || filters.dateTo) {
+      // Reset về trang 1 khi thay đổi bộ lọc
+      setPagination(prev => ({ ...prev, page: 1 }));
+      // Gọi API
+      fetchOrders();
+    }
+  }, [filters.status, filters.dateFrom, filters.dateTo, fetchOrders]);
 
   const handleDeleteOrder = async (id) => {
     // Open confirmation modal
@@ -164,11 +183,20 @@ const Orders = () => {
   // Handle search submit
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    // Reset to page 1 when filters change
+    
+    // Reset về trang 1 khi tìm kiếm
     setPagination(prev => ({
       ...prev,
       page: 1
     }));
+    
+    // Focus vào ô tìm kiếm sau khi submit
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+    
+    // Gọi API tìm kiếm
+    fetchOrders();
   };
 
   // Reset filters
@@ -237,6 +265,22 @@ const Orders = () => {
     }
   };
 
+  const handleCancelDelete = () => {
+    setDeleteModal({ isOpen: false, orderId: null });
+  };
+  
+  if (initialLoading) {
+    return (
+      <div className="flex h-screen bg-gray-50">
+        <AdminSidebar />
+        <div className="flex-1 p-8 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <p className="ml-4 text-gray-600">Đang tải dữ liệu...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-gray-50">
       <AdminSidebar />
@@ -255,15 +299,24 @@ const Orders = () => {
                   <label htmlFor="search" className="block text-xs font-medium text-gray-500 mb-1">
                     Tìm kiếm
                   </label>
-                  <input
-                    type="text"
-                    id="search"
-                    name="search"
-                    value={filters.search}
-                    onChange={handleFilterChange}
-                    placeholder="Tên khách hàng, email, mã đơn hàng..."
-                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-                  />
+                  <div className="flex">
+                    <input
+                      type="text"
+                      id="search"
+                      name="search"
+                      value={filters.search}
+                      onChange={handleFilterChange}
+                      placeholder="Tìm kiếm theo tên, email, username, mã đơn hàng..."
+                      className="w-full p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                      ref={searchInputRef}
+                    />
+                    <button 
+                      type="submit"
+                      className="bg-indigo-600 text-white px-4 py-2 rounded-r-md hover:bg-indigo-700 flex items-center justify-center"
+                    >
+                      <i className="bi bi-search"></i>
+                    </button>
+                  </div>
                 </div>
                 
                 <div>
@@ -325,13 +378,6 @@ const Orders = () => {
                 >
                   Xóa bộ lọc
                 </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-md"
-                >
-                  <i className="bi bi-search mr-2"></i>
-                  Lọc kết quả
-                </button>
               </div>
             </form>
           </div>
@@ -346,9 +392,11 @@ const Orders = () => {
         )}
         
         {loading ? (
-          <div className="flex flex-col items-center justify-center min-h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-            <p className="mt-4">Đang tải dữ liệu...</p>
+          <div className="bg-white rounded-xl shadow-sm p-4">
+            <div className="flex items-center justify-center py-4">
+              <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+              <span className="ml-2 text-sm text-gray-500">Đang tải...</span>
+            </div>
           </div>
         ) : orders.length > 0 ? (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -452,7 +500,7 @@ const Orders = () => {
       {/* Delete Confirmation Modal */}
       <DeleteConfirmationModal
         isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, orderId: null })}
+        onClose={handleCancelDelete}
         onConfirm={confirmDelete}
         orderId={deleteModal.orderId}
       />

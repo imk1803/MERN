@@ -18,13 +18,92 @@ router.get('/', authenticateToken, isAdmin, async (req, res) => {
       filter.status = status;
     }
     
-    // Tìm kiếm theo tên, email, ID
+    // Tìm kiếm theo thông tin khách hàng, email, ID
     if (search) {
+      console.log(`Đang tìm kiếm với từ khóa: "${search}"`);
+      
+      // Regex an toàn: escape các ký tự đặc biệt trong regex
+      const escapeRegex = (string) => {
+        return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      };
+      
+      const safeSearch = escapeRegex(search);
+      console.log(`Safe search term: "${safeSearch}"`);
+      
+      // Tìm kiếm các đơn hàng dựa trên username
+      const usersWithMatchingUsername = await mongoose.model('User').find(
+        { username: { $regex: safeSearch, $options: 'i' } },
+        '_id'
+      ).lean();
+      
+      // Nếu tìm thấy user phù hợp, tìm các đơn hàng của họ
+      let userIds = [];
+      if (usersWithMatchingUsername.length > 0) {
+        userIds = usersWithMatchingUsername.map(user => user._id);
+        console.log(`Tìm thấy ${userIds.length} người dùng có username khớp với "${search}"`);
+      }
+      
+      // Tìm kiếm thông tin khách hàng: tên, email, số điện thoại, địa chỉ, nội dung chuyển khoản
       filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { _id: search.match(/^[0-9a-fA-F]{24}$/) ? search : null }
+        { name: { $regex: safeSearch, $options: 'i' } },          // Tên khách hàng
+        { email: { $regex: safeSearch, $options: 'i' } },         // Email khách hàng
+        { phone: { $regex: safeSearch, $options: 'i' } },         // Số điện thoại
+        { address: { $regex: safeSearch, $options: 'i' } },       // Địa chỉ
+        { city: { $regex: safeSearch, $options: 'i' } },          // Thành phố
+        { 'paymentDetails.transferContent': { $regex: safeSearch, $options: 'i' } } // Nội dung chuyển khoản
       ];
+      
+      // Thêm điều kiện tìm kiếm theo user
+      if (userIds.length > 0) {
+        filter.$or.push({ user: { $in: userIds } });
+      }
+      
+      // Kiểm tra chi tiết hơn về field 'name'
+      const sampleOrder = await Order.findOne({}).lean();
+      if (sampleOrder) {
+        console.log('Sample order fields:', Object.keys(sampleOrder));
+        console.log('Sample order name field:', sampleOrder.name);
+      }
+      
+      // Tìm theo ID đầy đủ nếu là ObjectId hợp lệ
+      if (/^[0-9a-fA-F]{24}$/.test(search)) {
+        try {
+          const objId = new mongoose.Types.ObjectId(search);
+          filter.$or.push({ _id: objId });
+          console.log(`Đã thêm điều kiện tìm theo ObjectId đầy đủ: ${search}`);
+        } catch (e) {
+          console.log('ID không hợp lệ:', e.message);
+        }
+      }
+      
+      // Tìm theo một phần ID (không sử dụng regex với MongoDB ObjectIds)
+      if (/^[0-9a-fA-F]+$/.test(search) && search.length >= 4) {
+        console.log(`Tìm theo phần cuối của ID: ${search}`);
+        
+        try {
+          // Tìm tất cả đơn hàng
+          const allOrders = await Order.find({}, '_id').lean();
+          // Lọc các ID kết thúc bằng search
+          const matchingOrderIds = allOrders
+            .filter(order => {
+              const idString = order._id.toString();
+              // Kiểm tra nếu chuỗi tìm kiếm là 8 ký tự cuối của ID (short ID)
+              // Hoặc tìm kiếm là một phần của ID
+              return idString.endsWith(search) || idString.includes(search);
+            })
+            .map(order => order._id);
+          
+          console.log(`Tìm thấy ${matchingOrderIds.length} đơn hàng có ID chứa "${search}"`);
+          
+          if (matchingOrderIds.length > 0) {
+            filter.$or.push({ _id: { $in: matchingOrderIds } });
+          }
+        } catch (err) {
+          console.error('Lỗi khi tìm kiếm theo phần ID:', err);
+        }
+      }
+      
+      console.log('Final filter $or conditions:', filter.$or.length);
     }
     
     // Lọc theo ngày
@@ -41,6 +120,8 @@ router.get('/', authenticateToken, isAdmin, async (req, res) => {
       }
     }
     
+    console.log('Final filter:', JSON.stringify(filter, null, 2));
+    
     // Đếm tổng số đơn hàng thỏa mãn điều kiện
     const total = await Order.countDocuments(filter);
     
@@ -50,11 +131,21 @@ router.get('/', authenticateToken, isAdmin, async (req, res) => {
     
     // Lấy danh sách đơn hàng với phân trang và lọc
     const orders = await Order.find(filter)
-      .populate('user', 'username')
+      .populate('user', 'username email')
       .populate('products.productId', 'name price image')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(pageLimit);
+    
+    console.log(`Tìm thấy ${orders.length} đơn hàng từ tổng số ${total}`);
+    
+    // Hiển thị thông tin chi tiết về kết quả tìm kiếm
+    if (search && orders.length > 0) {
+      console.log('Kết quả tìm kiếm:');
+      orders.forEach((order, index) => {
+        console.log(`#${index + 1}: ID=${order._id}, Tên=${order.name}, Email=${order.email}`);
+      });
+    }
     
     // Trả về kết quả
     res.json({

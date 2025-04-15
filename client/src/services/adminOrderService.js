@@ -37,8 +37,16 @@ export const getOrders = async (options = {}) => {
     if (options.page) params.append('page', options.page);
     if (options.limit) params.append('limit', options.limit);
     
-    console.log(`Calling API: ${API_URL}/?${params.toString()}`);
-    const response = await adminAxios.get(`/?${params.toString()}`);
+    console.log(`Calling API with search: "${options.search}"`);
+    console.log(`Full params: ${params.toString()}`);
+    
+    // Tăng timeout cho request lên 30s để tránh timeout khi tìm kiếm
+    const response = await adminAxios.get(`/?${params.toString()}`, {
+      timeout: 30000 // 30 seconds
+    });
+    
+    // Log response data for debugging
+    console.log(`API returned ${response.data.orders?.length || 0} orders`);
     
     // Kiểm tra cấu trúc phản hồi và điều chỉnh theo cấu trúc API thực tế
     return {
