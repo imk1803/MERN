@@ -167,6 +167,26 @@ const OrderDetails = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {order.status === 'failed' && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-md">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">
+                Thanh toán đơn hàng thất bại
+              </h3>
+              <div className="mt-1 text-sm text-red-700">
+                <p>Đơn hàng của bạn không thể hoàn tất thanh toán. Vui lòng liên hệ với chúng tôi hoặc thử thanh toán lại.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Chi tiết đơn hàng</h1>
         <Link 
@@ -237,8 +257,12 @@ const OrderDetails = () => {
           </p>
           <div className="mt-2">
             <p className="text-sm text-gray-500">Trạng thái thanh toán</p>
-            <p className="font-medium">
-              {order.status === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}
+            <p className={`font-medium ${order.status === 'failed' ? 'text-red-600' : order.status === 'paid' ? 'text-emerald-600' : 'text-gray-800'}`}>
+              {order.status === 'paid' 
+                ? 'Đã thanh toán' 
+                : order.status === 'failed' 
+                ? 'Thanh toán thất bại' 
+                : 'Chưa thanh toán'}
             </p>
           </div>
           
@@ -276,18 +300,28 @@ const OrderDetails = () => {
             </div>
           )}
           
-          {order.status === 'failed' && order.paymentDetails && order.paymentDetails.failedReason && (
+          {order.status === 'failed' && order.paymentDetails && (
             <div className="mt-4 pt-4 border-t border-gray-100">
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-500">Lý do thất bại:</span>
-                <span className="text-red-600">{order.paymentDetails.failedReason}</span>
-              </div>
+              <h3 className="text-sm font-semibold text-red-600 mb-2">Thông tin lỗi thanh toán</h3>
+              
+              {order.paymentDetails.failedReason && (
+                <div className="flex flex-col text-sm mb-2">
+                  <span className="text-gray-500 mb-1">Lý do thất bại:</span>
+                  <span className="text-red-600 bg-red-50 p-2 rounded">{order.paymentDetails.failedReason}</span>
+                </div>
+              )}
+              
               {order.paymentDetails.failedAt && (
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-gray-500">Thời gian:</span>
                   <span>{formatDate(order.paymentDetails.failedAt)}</span>
                 </div>
               )}
+              
+              <div className="mt-3 text-sm">
+                <p className="text-gray-600">Vui lòng thử lại hoặc chọn phương thức thanh toán khác.</p>
+                <p className="text-gray-600 mt-1">Nếu bạn cho rằng đây là lỗi, vui lòng liên hệ với chúng tôi để được hỗ trợ.</p>
+              </div>
             </div>
           )}
         </div>
