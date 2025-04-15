@@ -456,11 +456,11 @@ const Orders = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {order.user?.username || order.shippingInfo?.name || 'Khách hàng'}
+                        {order.shippingInfo?.name || order.billingInfo?.name || order.name || 'Khách hàng'}
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {order.user?.email || order.shippingInfo?.email || ''}
-                      </div>
+                      {order.user?.username && (
+                        <div className="text-xs text-gray-500">@{order.user?.username}</div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">

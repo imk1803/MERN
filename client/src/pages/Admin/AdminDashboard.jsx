@@ -147,17 +147,17 @@ const RecentOrders = ({ orders = [] }) => {
         </div>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full table-auto">
           <thead>
             <tr className="text-left bg-gray-50">
-              <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Mã đơn hàng</th>
-              <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Sản phẩm</th>
-              <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Số lượng</th>
-              <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Người dùng</th>
-              <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày đặt</th>
-              <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-              <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng tiền</th>
-              <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
+              <th className="px-3 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Mã đơn</th>
+              <th className="px-3 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Sản phẩm</th>
+              <th className="px-3 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider w-12">SL</th>
+              <th className="px-3 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Người dùng</th>
+              <th className="px-3 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày đặt</th>
+              <th className="px-3 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+              <th className="px-3 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng tiền</th>
+              <th className="px-3 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Thao tác</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -165,19 +165,19 @@ const RecentOrders = ({ orders = [] }) => {
               orders.map((order) => {
                 return (
                   <tr key={order?._id || 'unknown'} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                       #{order?._id?.toString().slice(-8) || 'N/A'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-3 whitespace-nowrap">
                       {order?.products && order.products.length > 0 ? (
                         <div onClick={() => openModal(order)} className="cursor-pointer">
                           <div className="flex items-center">
                             <div className="flex -space-x-2 overflow-hidden">
                               {order.products.slice(0, 3).map((product, index) => (
-                                <div key={index} className="h-10 w-10 flex-shrink-0">
+                                <div key={index} className="h-8 w-8 flex-shrink-0">
                                   <img 
                                     alt={product?.name || "Sản phẩm"} 
-                                    className="h-10 w-10 rounded-full object-cover ring-2 ring-white"
+                                    className="h-8 w-8 rounded-full object-cover ring-2 ring-white"
                                     src={product?.image || "https://placehold.co/40x40"}
                                     onError={(e) => {
                                       e.target.onerror = null;
@@ -187,76 +187,55 @@ const RecentOrders = ({ orders = [] }) => {
                                 </div>
                               ))}
                               {order.products.length > 3 && (
-                                <div className="h-10 w-10 flex-shrink-0 flex items-center justify-center bg-gray-200 rounded-full ring-2 ring-white">
+                                <div className="h-8 w-8 flex-shrink-0 flex items-center justify-center bg-gray-200 rounded-full ring-2 ring-white">
                                   <span className="text-xs font-medium">+{order.products.length - 3}</span>
-                                </div>
-                              )}
-                            </div>
-                            <div className="ml-3">
-                              <div className="text-sm font-medium text-gray-900">
-                                {order.products[0]?.name || "Sản phẩm không xác định"}
-                              </div>
-                              {order.products.length > 1 && (
-                                <div className="text-xs text-indigo-600">
-                                  <span className="underline">Xem tất cả {order.products.length} sản phẩm</span>
                                 </div>
                               )}
                             </div>
                           </div>
                         </div>
                       ) : (
-                        <div className="text-sm text-gray-500">Không có sản phẩm</div>
+                        <div className="text-sm text-gray-500">Không có</div>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500 text-center">
                       {order?.products?.reduce((total, product) => total + (product?.quantity || 1), 0) || 0}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{order?.name || 'Khách hàng'}</div>
-                      <div className="text-sm text-gray-500">{order?.email || 'N/A'}</div>
+                    <td className="px-3 py-3 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{order?.shippingInfo?.name || order?.billingInfo?.name || order?.name || 'Khách hàng'}</div>
+                      {order?.user?.username && (
+                        <div className="text-xs text-gray-500">@{order?.user?.username}</div>
+                      )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {order?.createdAt ? new Date(order.createdAt).toLocaleDateString('vi-VN', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      }) : 'N/A'}
+                    <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
+                      {order?.createdAt ? new Date(order.createdAt).toLocaleDateString('vi-VN') : 'N/A'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        order?.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                        order?.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
-                        order?.status === 'processing' ? 'bg-indigo-100 text-indigo-800' :
-                        order?.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    <td className="px-3 py-3 whitespace-nowrap">
+                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                         order?.status === 'paid' ? 'bg-emerald-100 text-emerald-800' :
+                        order?.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                         order?.status === 'failed' ? 'bg-orange-100 text-orange-800' :
                         order?.status === 'cancelled' ? 'bg-red-100 text-red-800' :
                         'bg-gray-100 text-gray-800'
                       }`}>
-                        {order?.status === 'delivered' ? 'Đã giao hàng' :
-                         order?.status === 'shipped' ? 'Đang giao hàng' :
-                         order?.status === 'processing' ? 'Đang xử lý' :
+                        {order?.status === 'paid' ? 'Đã thanh toán' :
                          order?.status === 'pending' ? 'Chờ xác nhận' :
-                         order?.status === 'paid' ? 'Đã thanh toán' :
-                         order?.status === 'failed' ? 'Thanh toán thất bại' :
+                         order?.status === 'failed' ? 'Thất bại' :
                          order?.status === 'cancelled' ? 'Đã hủy' :
                          'Không xác định'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">
                       {new Intl.NumberFormat('vi-VN', { 
                         style: 'currency', 
                         currency: 'VND' 
                       }).format(order?.totalAmount || 0)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-3 py-3 whitespace-nowrap text-center text-sm font-medium">
                       <Link 
                         to={`/admin/orders/${order?._id}`}
-                        className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-md transition-colors duration-200"
+                        className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-md transition-colors duration-200"
                       >
-                        <i className="fas fa-eye mr-1"></i>
                         Chi tiết
                       </Link>
                     </td>
@@ -265,7 +244,7 @@ const RecentOrders = ({ orders = [] }) => {
               })
             ) : (
               <tr>
-                <td colSpan="8" className="px-6 py-4 text-center text-sm text-gray-500">
+                <td colSpan="8" className="px-3 py-3 text-center text-sm text-gray-500">
                   Không có đơn hàng nào gần đây
                 </td>
               </tr>
