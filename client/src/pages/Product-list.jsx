@@ -32,7 +32,7 @@ const ProductList = () => {
   
   const dropdownRef = useRef(null);
 
-  const limit = 4; // Giống backend
+  const limit = 9; // Hiển thị 9 sản phẩm mỗi trang để tối ưu bố cục grid 3x3
 
   // Cấu hình axios để luôn gửi cookie (session ID)
   axios.defaults.withCredentials = true;
@@ -229,48 +229,47 @@ const ProductList = () => {
           <p className="ml-4 text-gray-600">Đang tải sản phẩm...</p>
         </div>
       ) : products.length === 0 ? (
-        <div className="bg-white rounded-lg p-8 text-center">
-          <p className="text-gray-500 mb-4">Không tìm thấy sản phẩm nào phù hợp.</p>
-          <button
-            onClick={() => handleCategoryChange('')}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-          >
-            Xóa bộ lọc
-          </button>
+        <div className="text-center py-10">
+          <p className="text-gray-500">Không có sản phẩm nào.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {products.map((product) => (
-            <div key={product._id} className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col h-full">
-              <div className="w-full h-40">
-                <img 
-                  src={product.image.startsWith('http') ? product.image : `http://localhost:5000${product.image}`} 
-                  alt={product.name} 
-                  className="w-full h-40 object-cover" 
-                />
-              </div>
-              <div className="p-4 flex flex-col flex-grow">
-                <h2 className="text-lg font-semibold mb-2 line-clamp-2 h-14 overflow-hidden" title={product.name}>
-                  {product.name}
-                </h2>
-                <p className="mt-auto"><strong>Giá:</strong> <span className="text-gray-700">{product.price ? product.price.toLocaleString('vi-VN') : 0}đ</span></p>
-                <div className="mt-4 flex flex-col gap-2">
-                  <Link
-                    to={`/products/${product._id}`}
-                    className="block w-full bg-gray-100 text-gray-500 py-2 rounded-lg flex items-center justify-center"
-                  >
-                    <i className="fas fa-info-circle mr-2"></i> Xem chi tiết
-                  </Link>
+        <div className="container mx-auto p-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {products.map((product) => (
+              <div key={product._id} className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col h-full hover:shadow-lg transition-shadow duration-300">
+                <Link to={`/products/${product._id}`} className="flex flex-col flex-grow">
+                  <div className="w-full h-40 overflow-hidden">
+                    <img 
+                      src={product.image.startsWith('http') ? product.image : `http://localhost:5000${product.image}`} 
+                      alt={product.name} 
+                      className="w-full h-40 object-cover hover:scale-105 transition-transform duration-300" 
+                    />
+                  </div>
+                  <div className="p-4 flex flex-col flex-grow">
+                    <h2 className="text-lg font-semibold mb-1 line-clamp-2 h-14 overflow-hidden" title={product.name}>
+                      {product.name}
+                    </h2>
+                    <p className="text-xs text-gray-500 mb-2">
+                      {product.category && product.category.name ? product.category.name : 
+                       product.categoryName ? product.categoryName : "Không có danh mục"}
+                    </p>
+                    <p className="mt-auto text-red-500 font-bold">{product.price ? product.price.toLocaleString('vi-VN') : 0}đ</p>
+                  </div>
+                </Link>
+                <div className="px-4 pb-4">
                   <button
-                    onClick={() => handleAddToCart(product._id, showNotification)}
-                    className="w-full bg-blue-100 text-blue-500 py-2 rounded-lg flex items-center justify-center"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleAddToCart(product._id, showNotification);
+                    }}
+                    className="w-full bg-blue-100 text-blue-500 py-2 rounded-lg flex items-center justify-center hover:bg-blue-200 transition-colors"
                   >
                     <i className="fas fa-shopping-cart mr-2"></i> Thêm vào giỏ hàng
                   </button>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 

@@ -21,7 +21,7 @@ router.get('/search', async (req, res) => {
         const sanitizedQuery = sanitizeSearchInput(rawQuery.trim());
         
         const page = parseInt(req.query.page) || 1;
-        const limit = 4;
+        const limit = parseInt(req.query.limit) || 9;
         const skip = (page - 1) * limit;
 
         // Bỏ qua tìm kiếm nếu query trống

@@ -26,7 +26,7 @@ router.get('/categories', async (req, res) => {
 // API trả về danh sách sản phẩm dạng JSON cho frontend React
 router.get('/', async (req, res) => {
     try {
-        const { page = 1, limit = 10, category, search, sort } = req.query;
+        const { page = 1, limit = 9, category, search, sort } = req.query;
         const pageNumber = parseInt(page);
         const limitNumber = parseInt(limit);
         const skip = (pageNumber - 1) * limitNumber;
@@ -155,7 +155,7 @@ router.get('/index', async (req, res) => {
 // Danh sách sản phẩm có phân trang
 router.get('/product', async (req, res) => {
     const page = parseInt(req.query.page) || 1;
-    const limit = 4;
+    const limit = 9; // Hiển thị 9 sản phẩm mỗi trang
     const skip = (page - 1) * limit;
 
     try {

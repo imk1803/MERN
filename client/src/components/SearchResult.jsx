@@ -1,6 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
+import handleAddToCart from '../services/cartService';
+
+// CSS animation styles
+const styles = {
+  fadeIn: `
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .notification-animate {
+      animation: fadeIn 0.3s ease-out forwards;
+    }
+  `
+};
 
 const SearchResult = () => {
   const [searchParams] = useSearchParams();
@@ -10,6 +24,8 @@ const SearchResult = () => {
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
+  const productsPerPage = 9; // Hiển thị 9 sản phẩm mỗi trang
+  const [notification, setNotification] = useState({ show: false, message: '', type: '' });
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -19,7 +35,7 @@ const SearchResult = () => {
       setError(null);
       
       try {
-        const res = await axios.get(`/api/search/search?q=${encodeURIComponent(query)}&page=${currentPage}`);
+        const res = await axios.get(`/api/search/search?q=${encodeURIComponent(query)}&page=${currentPage}&limit=${productsPerPage}`);
         setProducts(res.data.products);
         setTotalPages(res.data.totalPages);
         setCurrentPage(res.data.currentPage);
@@ -40,6 +56,16 @@ const SearchResult = () => {
     }
   };
 
+  // Hiển thị thông báo
+  const showNotification = (message, type) => {
+    setNotification({ show: true, message, type });
+    
+    // Tự động ẩn thông báo sau 3 giây
+    setTimeout(() => {
+      setNotification({ show: false, message: '', type: '' });
+    }, 3000);
+  };
+
   if (!query) {
     return (
       <div className="container mx-auto p-4 text-center">
@@ -50,8 +76,23 @@ const SearchResult = () => {
 
   return (
     <div className="container mx-auto p-4">
+      <style>{styles.fadeIn}</style>
+      
       <h2 className="text-xl font-bold mb-4">Kết quả tìm kiếm cho: "{query}"</h2>
       
+      {notification.show && (
+        <div 
+          className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg notification-animate ${
+            notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+          } text-white flex items-center`}
+        >
+          <span className="mr-2">
+            {notification.type === 'success' ? '✓' : '✕'}
+          </span>
+          {notification.message}
+        </div>
+      )}
+
       {loading ? (
         <div className="text-center py-10">
           <div className="spinner-border text-primary" role="status">
@@ -67,33 +108,51 @@ const SearchResult = () => {
           <p>Không tìm thấy sản phẩm nào phù hợp với từ khóa "{query}"</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {products.map((product) => (
-            <div key={product._id} className="border p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow bg-white">
-              <Link to={`/products/${product._id}`}>
-                <div className="mb-2">
-                  {product.image ? (
-                    <img 
-                      src={`http://localhost:5000${product.image}`}
-                      alt={product.name} 
-                      className="w-full h-48 object-cover rounded"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = 'https://via.placeholder.com/300x200?text=No+Image';
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-48 bg-gray-200 flex items-center justify-center rounded">
-                      <span className="text-gray-500">No image</span>
-                    </div>
-                  )}
+        <div className="container mx-auto p-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {products.map((product) => (
+              <div key={product._id} className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col h-full hover:shadow-lg transition-shadow duration-300">
+                <Link to={`/products/${product._id}`} className="flex flex-col flex-grow">
+                  <div className="w-full h-40 overflow-hidden">
+                    {product.image ? (
+                      <img 
+                        src={`http://localhost:5000${product.image}`}
+                        alt={product.name} 
+                        className="w-full h-40 object-cover hover:scale-105 transition-transform duration-300"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://via.placeholder.com/300x200?text=No+Image';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-40 bg-gray-200 flex items-center justify-center">
+                        <span className="text-gray-500">No image</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4 flex flex-col flex-grow">
+                    <h3 className="text-lg font-semibold mb-1 line-clamp-2 h-14 overflow-hidden" title={product.name}>{product.name}</h3>
+                    <p className="text-xs text-gray-500 mb-2">
+                      {product.category && product.category.name ? product.category.name : 
+                       product.categoryName ? product.categoryName : "Không có danh mục"}
+                    </p>
+                    <p className="mt-auto text-red-500 font-bold">{product.price ? product.price.toLocaleString('vi-VN') : 0}đ</p>
+                  </div>
+                </Link>
+                <div className="px-4 pb-4">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleAddToCart(product._id, showNotification);
+                    }}
+                    className="w-full bg-blue-100 text-blue-500 py-2 rounded-lg flex items-center justify-center hover:bg-blue-200 transition-colors"
+                  >
+                    <i className="fas fa-shopping-cart mr-2"></i> Thêm vào giỏ hàng
+                  </button>
                 </div>
-                <h3 className="font-bold text-lg">{product.name}</h3>
-                <p className="text-red-600 font-bold mt-2">{product.price ? product.price.toLocaleString() : 0} VNĐ</p>
-                <p className="text-gray-600 text-sm mt-2 line-clamp-2">{product.description || 'Không có mô tả'}</p>
-              </Link>
-            </div>
-          ))}
+              </div>
+            ))}
+          </div>
         </div>
       )}
       
