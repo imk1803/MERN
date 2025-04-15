@@ -24,7 +24,11 @@ router.get('/', authenticateToken, isAdmin, async (req, res) => {
     
     // Tìm kiếm theo username
     if (search) {
-      query.username = { $regex: search, $options: 'i' };
+      // Sanitize search string by escaping regex special characters
+      const sanitizedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      
+      // Search by username only
+      query.username = { $regex: sanitizedSearch, $options: 'i' };
     }
     
     // Lọc theo vai trò

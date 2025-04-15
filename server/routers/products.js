@@ -6,14 +6,81 @@ const Category = require('../models/Category');
 
 // ========================== ROUTES API JSON ==========================
 
+// API để lấy tất cả danh mục - đặt trước các route khác để ưu tiên xử lý
+router.get('/categories', async (req, res) => {
+    try {
+        const categories = await Category.find({ isActive: true })
+            .select('_id name slug description image')
+            .sort({ name: 1 });
+        
+        res.json(categories);
+    } catch (err) {
+        console.error('Lỗi khi lấy danh sách danh mục:', err);
+        res.status(500).json({ 
+            success: false, 
+            message: "Lỗi khi lấy danh sách danh mục" 
+        });
+    }
+});
+
 // API trả về danh sách sản phẩm dạng JSON cho frontend React
 router.get('/', async (req, res) => {
     try {
-        const products = await Product.find();
-        res.json(products); // Trả JSON danh sách sản phẩm
+        const { page = 1, limit = 10, category, search, sort } = req.query;
+        const pageNumber = parseInt(page);
+        const limitNumber = parseInt(limit);
+        const skip = (pageNumber - 1) * limitNumber;
+        
+        // Xây dựng điều kiện tìm kiếm
+        const filter = {};
+        
+        // Lọc theo danh mục
+        if (category) {
+            filter.category = category;
+        }
+        
+        // Tìm kiếm theo tên sản phẩm
+        if (search) {
+            filter.name = { $regex: search, $options: 'i' };
+        }
+        
+        // Tạo query sắp xếp
+        let sortQuery = {};
+        if (sort) {
+            const [sortField, sortDirection] = sort.split(':');
+            sortQuery[sortField] = sortDirection === 'desc' ? -1 : 1;
+        } else {
+            // Mặc định sắp xếp theo createdAt giảm dần (mới nhất trước)
+            sortQuery = { createdAt: -1 };
+        }
+        
+        // Thực hiện query với filter và pagination
+        const totalProducts = await Product.countDocuments(filter);
+        
+        // Truy vấn sản phẩm với populate để lấy thông tin danh mục
+        const products = await Product.find(filter)
+            .populate('category', 'name')
+            .sort(sortQuery)
+            .skip(skip)
+            .limit(limitNumber);
+        
+        // Trả về kết quả với thông tin phân trang
+        res.json({
+            success: true,
+            products,
+            pagination: {
+                total: totalProducts,
+                page: pageNumber,
+                limit: limitNumber,
+                totalPages: Math.ceil(totalProducts / limitNumber)
+            }
+        });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Lỗi lấy danh sách sản phẩm" });
+        console.error('Lỗi khi lấy danh sách sản phẩm:', err);
+        res.status(500).json({ 
+            success: false, 
+            message: "Lỗi lấy danh sách sản phẩm" 
+        });
     }
 });
 

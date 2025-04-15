@@ -36,6 +36,16 @@ const Header = () => {
       setSearchQuery('');
     }
   };
+  
+  // Xử lý nhập tìm kiếm, loại bỏ ký tự đặc biệt
+  const handleSearchChange = (e) => {
+    // Sanitize input by removing special characters
+    const rawValue = e.target.value;
+    const sanitizedValue = rawValue.replace(/[+\-.,/\\[\]{}()*^%$#@!~`|<>?=&]/g, '');
+    
+    // Update input field with sanitized value
+    setSearchQuery(sanitizedValue);
+  };
 
   // Xử lý đăng xuất
 const handleLogout = async () => {
@@ -103,9 +113,9 @@ const handleLogout = async () => {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearchChange}
               className="border border-gray-300 rounded-full py-2 px-4 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Tìm kiếm..."
+              placeholder="Tìm kiếm sản phẩm..."
             />
             <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
           </form>

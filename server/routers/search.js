@@ -7,16 +7,25 @@ function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
+// Hàm sanitize loại bỏ ký tự đặc biệt khỏi chuỗi tìm kiếm
+function sanitizeSearchInput(input) {
+    if (!input) return '';
+    return input.replace(/[+\-.,/\\[\]{}()*^%$#@!~`|<>?=&]/g, '');
+}
+
 // ========================== API SEARCH PRODUCTS ==========================
 router.get('/search', async (req, res) => {
     try {
-        const query = req.query.q ? req.query.q.trim() : "";
+        // Sanitize và xử lý query
+        const rawQuery = req.query.q || "";
+        const sanitizedQuery = sanitizeSearchInput(rawQuery.trim());
+        
         const page = parseInt(req.query.page) || 1;
         const limit = 4;
         const skip = (page - 1) * limit;
 
         // Bỏ qua tìm kiếm nếu query trống
-        if (!query) {
+        if (!sanitizedQuery) {
             const products = await Product.find().skip(skip).limit(limit);
             const totalProducts = await Product.countDocuments();
             const totalPages = Math.ceil(totalProducts / limit);
@@ -30,15 +39,11 @@ router.get('/search', async (req, res) => {
         }
 
         // Tạo điều kiện tìm kiếm an toàn với các ký tự đặc biệt đã được escape
-        const safeQuery = escapeRegExp(query);
+        const safeQuery = escapeRegExp(sanitizedQuery);
         
-        // Tìm kiếm sản phẩm dựa trên các trường là string: name, categoryName, description
+        // Tìm kiếm sản phẩm chỉ dựa trên tên sản phẩm
         const searchCondition = {
-            $or: [
-                { name: { $regex: safeQuery, $options: "i" } },
-                { categoryName: { $regex: safeQuery, $options: "i" } },
-                { description: { $regex: safeQuery, $options: "i" } }
-            ]
+            name: { $regex: safeQuery, $options: "i" }
         };
         
         // Tìm kiếm sản phẩm
@@ -56,7 +61,7 @@ router.get('/search', async (req, res) => {
             products,
             currentPage: page,
             totalPages,
-            query
+            query: sanitizedQuery
         });
     } catch (err) {
         console.error("Search error:", err);

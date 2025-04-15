@@ -85,8 +85,13 @@ const Users = () => {
   }, [search, role, sortBy, sortOrder, page, fetchUsers]);
   
   const handleSearchChange = (e) => {
-    const value = e.target.value;
-    setSearch(value);
+    // Sanitize input by removing special characters
+    const rawValue = e.target.value;
+    const sanitizedValue = rawValue.replace(/[+\-.,/\\[\]{}()*^%$#@!~`|<>?=&]/g, '');
+    
+    // Update input field with sanitized value
+    e.target.value = sanitizedValue;
+    setSearch(sanitizedValue);
     setPage(1); // Reset về trang 1 khi tìm kiếm
   };
   
@@ -177,7 +182,7 @@ const Users = () => {
                 <input
                   ref={searchInputRef}
                   type="text"
-                  placeholder="Tìm kiếm tên người dùng..."
+                  placeholder="Tìm kiếm theo tên người dùng (username)..."
                   className="w-full px-4 py-2 border rounded-l-md focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                   value={search}
                   onChange={handleSearchChange}
